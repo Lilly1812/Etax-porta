@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import logo from './assets/logo.jpg';
 
 function Spinner({ size = 5 }) {
   return (
@@ -87,84 +88,74 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl w-full">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #fff 100%)' }}>
+      <div className="bg-white rounded-2xl shadow-lg p-16 max-w-2xl w-full border-t-8 border-blue-800">
         {step === "login" && (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-800 text-center">
-              Đăng nhập
-            </h2>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <img src={logo} alt="BizNext Logo" className="mx-auto mb-4 w-44 drop-shadow-lg" />
+            <h2 className="text-3xl font-bold text-blue-800 text-center tracking-wide mb-2">Đăng nhập hệ thống</h2>
+            <p className="text-center text-gray-400 mb-6">Vui lòng nhập thông tin để tiếp tục</p>
             <input
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400 text-blue-900 bg-white transition-all"
               placeholder="Tên đăng nhập"
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
             />
             <input
               type="password"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400 text-blue-900 bg-white transition-all"
               placeholder="Mật khẩu"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
-            <div className="flex items-center space-x-4">
+            <div className="flex w-full">
               <input
-                className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 p-3 border border-blue-200 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400 text-blue-900 bg-white transition-all"
                 placeholder="Mã captcha"
                 value={form.captcha_code}
-                onChange={(e) =>
-                  setForm({ ...form, captcha_code: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, captcha_code: e.target.value })}
+                style={{ height: '56px' }}
               />
               {captchaUrl ? (
-                <div className="flex items-center space-x-2">
-                  <img
-                    src={captchaUrl}
-                    alt="captcha"
-                    className="h-12 border"
-                  />
-                  <button
-                    type="button"
-                    disabled={loadingCaptcha}
-                    onClick={async () => {
-                      try {
-                        setLoadingCaptcha(true);
-                        await axios.get("http://localhost:8000/refresh");
-                        setCaptchaUrl(
-                          `http://localhost:8000/captcha?ts=${Date.now()}`
-                        );
-                      } catch (err) {
-                        console.error("Captcha reload failed", err);
-                      } finally {
-                        setLoadingCaptcha(false);
-                      }
-                    }}
-                    className={`p-1 hover:opacity-80 transition-opacity ${
-                      loadingCaptcha ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                    }`}
-                    title="Làm mới mã captcha"
-                  >
-                    {loadingCaptcha ? (
-                      <Spinner size={4} />
-                    ) : (
-                      <img
-                        src="https://thuedientu.gdt.gov.vn/etaxnnt/static/images/bab/lam_moi.png"
-                        alt="Làm mới"
-                        width="18"
-                        height="16"
-                      />
-                    )}
-                  </button>
-                </div>
+                <img
+                  src={captchaUrl}
+                  alt="captcha"
+                  className="h-14 w-48 border-t border-b border-blue-200 bg-white object-contain"
+                  style={{ height: '56px', borderTopRightRadius: 0, borderBottomRightRadius: 0, borderLeft: 'none' }}
+                />
               ) : (
-                <div className="h-12 w-24 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-sm">
+                <div className="h-14 w-48 border-t border-b border-blue-200 bg-gray-100 flex items-center justify-center text-gray-400 text-sm animate-pulse" style={{ height: '56px', borderTopRightRadius: 0, borderBottomRightRadius: 0, borderLeft: 'none' }}>
                   Đang tải captcha...
                 </div>
               )}
+              <button
+                type="button"
+                disabled={loadingCaptcha}
+                onClick={async () => {
+                  try {
+                    setLoadingCaptcha(true);
+                    await axios.get("http://localhost:8000/refresh");
+                    setCaptchaUrl(`http://localhost:8000/captcha?ts=${Date.now()}`);
+                  } catch (err) {
+                    console.error("Captcha reload failed", err);
+                  } finally {
+                    setLoadingCaptcha(false);
+                  }
+                }}
+                className={`p-0 w-14 h-14 border border-blue-200 border-l-0 rounded-r-lg bg-white hover:bg-blue-50 transition-colors shadow-sm flex items-center justify-center ${loadingCaptcha ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                title="Làm mới mã captcha"
+                style={{ height: '56px' }}
+              >
+                {loadingCaptcha ? (
+                  <Spinner size={4} />
+                ) : (
+                  <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M2 12a10 10 0 1 1 4.93 8.36" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><polyline points="2 17 2 12 7 12" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                )}
+              </button>
             </div>
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors flex justify-center items-center"
+              className="w-full bg-blue-800 text-white p-3 rounded-lg font-semibold text-lg shadow hover:bg-blue-600 transition-all flex justify-center items-center mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={loadingLogin}
             >
               {loadingLogin ? <Spinner /> : "Đăng nhập"}

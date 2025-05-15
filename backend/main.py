@@ -14,7 +14,7 @@ from selenium.common.exceptions import NoSuchElementException, WebDriverExceptio
 
 app = FastAPI()
 
-cert_path = "X:/TraCuuThue/TraCuuToKhai/.venv/Lib/site-packages/certifi/custom_cacert.pem"
+cert_path = "F:/Work/biznext/Etax-portal/.venv/Lib/site-packages/certifi/custom_cacert.pem"
 
 chrome_options = Options()
 chrome_options.add_argument("--headless")
