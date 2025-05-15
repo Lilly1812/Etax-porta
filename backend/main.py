@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Form
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
@@ -13,6 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 from selenium.common.exceptions import NoSuchElementException, WebDriverException, TimeoutException
+import os
 
 app = FastAPI()
 
@@ -517,3 +518,42 @@ def display():
                 "padding": "20px"
             }
         }
+
+@app.get("/download")
+def download(ma_giao_dich: str):
+    """
+    Tải file tờ khai theo mã giao dịch bằng Selenium và trả file về cho frontend.
+    """
+    try:
+        # Vào đúng iframe chứa bảng
+        iframe = wait.until(EC.presence_of_element_located((By.ID, "tranFrame")))
+        driver.switch_to.frame(iframe)
+
+        # Tìm thẻ <a> có onclick="downloadTkhai('ma_giao_dich')"
+        download_link = wait.until(EC.element_to_be_clickable(
+            (By.XPATH, f"//a[contains(@onclick, \"downloadTkhai('{ma_giao_dich}')\")]" )
+        ))
+        download_link.click()
+
+        # Đợi file tải về (giả sử file tải về thư mục download mặc định)
+        download_dir = 'D:/biznext/EtaxSystem/Etax-porta/downloads'  # Cập nhật đúng đường dẫn thư mục download của bạn
+        timeout = 30
+        file_path = None
+        for _ in range(timeout):
+            files = [os.path.join(download_dir, f) for f in os.listdir(download_dir)]
+            files = [f for f in files if os.path.isfile(f)]
+            if files:
+                file_path = max(files, key=os.path.getctime)
+                if not file_path.endswith('.crdownload'):
+                    break
+            time.sleep(1)
+        driver.switch_to.default_content()
+
+        if not file_path or not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="Không tìm thấy file tải về")
+
+        # Trả file về frontend
+        return FileResponse(file_path, filename=os.path.basename(file_path), media_type='application/octet-stream')
+    except Exception as e:
+        driver.switch_to.default_content()
+        raise HTTPException(status_code=500, detail=f"Lỗi tải file: {str(e)}")
