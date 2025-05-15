@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import logo from './assets/logo.jpg';
+import logo from './assets/logo.png';
+import RealTaxSearch from "./components/RealTaxSearch";
+import MainLayout from "./components/MainLayout";
+
 
 function Spinner({ size = 5 }) {
   return (
@@ -25,6 +28,7 @@ function App() {
   const [tableData, setTableData] = useState([]);
 
   useEffect(() => {
+    // XÓA kiểm tra trạng thái đăng nhập khi load lại trang
     const loadCaptcha = async () => {
       try {
         await axios.get("http://localhost:8000/access");
@@ -47,6 +51,7 @@ function App() {
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
         }
       );
+      // XÓA localStorage.setItem("isLoggedIn", "true");
       setStep("search");
     } catch (err) {
       console.error("Login failed", err);
@@ -88,9 +93,9 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #fff 100%)' }}>
-      <div className="bg-white rounded-2xl shadow-lg p-16 max-w-2xl w-full border-t-8 border-blue-800">
-        {step === "login" && (
+    step === "login" ? (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #fff 100%)' }}>
+        <div className="bg-white rounded-2xl shadow-lg p-16 max-w-2xl w-full border-t-8 border-blue-800">
           <form onSubmit={handleLogin} className="space-y-6">
             <img src={logo} alt="BizNext Logo" className="mx-auto mb-4 w-44 drop-shadow-lg" />
             <h2 className="text-3xl font-bold text-blue-800 text-center tracking-wide mb-2">Đăng nhập hệ thống</h2>
@@ -161,71 +166,11 @@ function App() {
               {loadingLogin ? <Spinner /> : "Đăng nhập"}
             </button>
           </form>
-        )}
-
-        {step === "search" && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-800 text-center">
-              Tra cứu tờ khai
-            </h2>
-            <input
-              type="date"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              value={dates.from}
-              onChange={(e) => setDates({ ...dates, from: e.target.value })}
-            />
-            <input
-              type="date"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              value={dates.to}
-              onChange={(e) => setDates({ ...dates, to: e.target.value })}
-            />
-            <button
-              onClick={handleSearch}
-              disabled={loadingSearch}
-              className="w-full bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition-colors flex justify-center items-center"
-            >
-              {loadingSearch ? <Spinner /> : "Tra cứu"}
-            </button>
-          </div>
-        )}
-
-        {tableData.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Kết quả tra cứu
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full border border-gray-200 text-sm text-gray-700">
-                <thead className="bg-gray-50">
-                  <tr>
-                    {tableData[0].map((header, idx) => (
-                      <th
-                        key={idx}
-                        className="px-4 py-3 border-b text-left font-medium text-gray-800"
-                      >
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {tableData.slice(1).map((row, rowIndex) => (
-                    <tr key={rowIndex} className="border-b hover:bg-gray-50">
-                      {row.map((cell, cellIndex) => (
-                        <td key={cellIndex} className="px-4 py-3 border-b">
-                          {cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
-    </div>
+    ) : (
+      <MainLayout />
+    )
   );
 }
 
