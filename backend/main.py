@@ -14,6 +14,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 from selenium.common.exceptions import NoSuchElementException, WebDriverException, TimeoutException
 import os
+import re
 
 app = FastAPI()
 
@@ -90,7 +91,6 @@ def access():
         )
         print(f"Generated URL: {url_new}")
         driver.get(url_new)
-        driver.save_screenshot('new_page_full.png')
         return {"message": "Accessed login page."}
     except TimeoutException:
         raise HTTPException(status_code=500, detail="Timeout waiting for page elements")
@@ -473,8 +473,32 @@ def display():
 
                 cols = row.find_elements(By.TAG_NAME, "td")
                 if cols:
-                    filtered_row = [col.text.strip() for idx, col in enumerate(cols) if idx not in skip_indices]
-                    data.append(filtered_row)
+                    row_data = []
+                    for idx, col in enumerate(cols):
+                        if idx in skip_indices:
+                            continue
+                            
+                        cell_text = col.text.strip()
+                        # If this is the column with the download link
+                        if "Tờ khai/Phụ lục" in (data[0][len(row_data)] if data and data[0] else ""):
+                            try:
+                                # Try to find the download link and extract maGiaoDich
+                                link = col.find_element(By.TAG_NAME, "a")
+                                onclick = link.get_attribute("onclick")
+                                if onclick and "downloadBke" in onclick:
+                                    # Extract maGiaoDich from downloadBke('number')
+                                    match = re.search(r"downloadBke\('(\d+)'\)", onclick)
+                                    if match:
+                                        ma_giao_dich = match.group(1)
+                                        # Add maGiaoDich to the appropriate column if it doesn't exist
+                                        ma_giao_dich_idx = data[0].index("Mã giao dịch") if "Mã giao dịch" in data[0] else -1
+                                        if ma_giao_dich_idx >= 0 and len(row_data) > ma_giao_dich_idx and not row_data[ma_giao_dich_idx]:
+                                            row_data[ma_giao_dich_idx] = ma_giao_dich
+                            except Exception as e:
+                                print(f"Error extracting maGiaoDich: {e}")
+                                
+                        row_data.append(cell_text)
+                    data.append(row_data)
 
             # Check if we have any data
             if len(data) <= 1:  # Only headers or empty
@@ -525,29 +549,57 @@ def download(ma_giao_dich: str):
     Tải file tờ khai theo mã giao dịch bằng Selenium và trả file về cho frontend.
     """
     try:
-        # Vào đúng iframe chứa bảng
-        iframe = wait.until(EC.presence_of_element_located((By.ID, "tranFrame")))
-        driver.switch_to.frame(iframe)
+        # Ensure we're on the correct page first
+        try:
+            # Switch to default content first in case we're still in an iframe
+            driver.switch_to.default_content()
+            
+            # Wait for iframe with explicit wait
+            iframe = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.ID, "tranFrame"))
+            )
+            # Switch to iframe
+            driver.switch_to.frame(iframe)
+            print("Successfully switched to iframe")
+        except Exception as e:
+            print(f"Error switching to iframe: {e}")
+            # If we can't switch to iframe, we'll try to get session info from current page
+            driver.switch_to.default_content()
 
-        # Lấy session_id từ driver
-        session_id = driver.execute_script("return document.getElementsByName('dse_sessionId')[0].value;")
-        
-        # Lấy cookies từ driver
+        try:
+            # Try to get session_id and processor_id from the page
+            session_id = wait.until(EC.presence_of_element_located((By.NAME, 'dse_sessionId'))).get_attribute('value')
+            application_id = wait.until(EC.presence_of_element_located((By.NAME, 'dse_applicationId'))).get_attribute('value')
+            page_id = wait.until(EC.presence_of_element_located((By.NAME, 'dse_pageId'))).get_attribute('value')
+            processor_id = wait.until(EC.presence_of_element_located((By.NAME, 'dse_processorId'))).get_attribute('value')
+            
+            if not session_id or not processor_id:
+                raise ValueError("Could not find session_id or processor_id")
+                
+            print(f"Found session_id: {session_id}")
+            print(f"Found processor_id: {processor_id}")
+        except Exception as e:
+            print(f"Error getting session info: {e}")
+            raise HTTPException(status_code=401, detail="Session expired or invalid")
+
+        # Get cookies
         cookies = {cookie['name']: cookie['value'] for cookie in driver.get_cookies()}
         
-        # Tạo URL download với định dạng mới
+        # Create download URL
         download_url = (
             f"https://thuedientu.gdt.gov.vn/etaxnnt/Request"
             f"?dse_sessionId={session_id}"
-            f"&dse_applicationId=-1"
+            f"&dse_applicationId={application_id}"
             f"&dse_operationName=traCuuToKhaiProc"
-            f"&dse_pageId=13"
+            f"&dse_pageId={page_id}"
             f"&dse_processorState=viewTraCuuTkhai"
+            f"&dse_processorId={processor_id}"
             f"&dse_nextEventName=downTkhai"
             f"&messageId={ma_giao_dich}"
         )
+        print(f"Download URL: {download_url}")
         
-        # Thiết lập headers
+        # Set up headers
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
             'Accept': 'application/xml,application/x-pdf,application/octet-stream,*/*',
@@ -557,41 +609,61 @@ def download(ma_giao_dich: str):
             'Connection': 'keep-alive'
         }
         
-        # Tải file trực tiếp từ URL với cookies và headers
-        response = requests.get(
-            download_url,
-            cookies=cookies,
-            headers=headers,
-            verify=False,
-            stream=True,
-            timeout=30
-        )
-        
-        if response.status_code == 200:
-            # Tạo file tạm thời để lưu nội dung
-            temp_file = BytesIO(response.content)
-            
-            # Xác định content type từ response
-            content_type = response.headers.get('Content-Type', 'application/xml')
-            
-            # Tạo tên file theo định dạng ETAX + mã giao dịch + .xml
-            filename = f"ETAX{ma_giao_dich}.xml"
-            
-            return StreamingResponse(
-                temp_file,
-                media_type=content_type,
-                headers={
-                    'Content-Disposition': f'attachment; filename={filename}',
-                    'Content-Type': content_type,
-                    'Content-Length': str(len(response.content))
-                }
+        # Make the request with error handling
+        try:
+            response = requests.get(
+                download_url,
+                cookies=cookies,
+                headers=headers,
+                verify=False,
+                stream=True,
+                timeout=30
             )
-        else:
-            print(f"Download failed with status code: {response.status_code}")
-            print(f"Response content: {response.text}")
-            raise HTTPException(status_code=404, detail="Không tìm thấy file tải về")
-
+            
+            print(f"Response status code: {response.status_code}")
+            print(f"Response headers: {response.headers}")
+            
+            if response.status_code == 200:
+                # Create temporary file in memory
+                temp_file = BytesIO(response.content)
+                
+                # Get content type
+                content_type = response.headers.get('Content-Type', 'application/xml')
+                
+                # Create filename
+                filename = f"ETAX{ma_giao_dich}.xml"
+                
+                # Return the file
+                return StreamingResponse(
+                    temp_file,
+                    media_type=content_type,
+                    headers={
+                        'Content-Disposition': f'attachment; filename={filename}',
+                        'Content-Type': content_type,
+                        'Content-Length': str(len(response.content))
+                    }
+                )
+            else:
+                print(f"Download failed with status code: {response.status_code}")
+                print(f"Response content: {response.text}")
+                raise HTTPException(status_code=response.status_code, 
+                                  detail=f"Download failed with status {response.status_code}")
+                
+        except requests.RequestException as e:
+            print(f"Request error: {e}")
+            raise HTTPException(status_code=500, detail=f"Request error: {str(e)}")
+            
     except Exception as e:
         print(f"Error in download: {str(e)}")
-        driver.switch_to.default_content()
+        # Always ensure we switch back to default content
+        try:
+            driver.switch_to.default_content()
+        except:
+            pass
         raise HTTPException(status_code=500, detail=f"Lỗi tải file: {str(e)}")
+    finally:
+        # Always ensure we switch back to default content
+        try:
+            driver.switch_to.default_content()
+        except:
+            pass
