@@ -189,7 +189,7 @@ export default function RealTaxSearch() {
                 return (
                   <tr key={rowIndex} className="border-b hover:bg-gray-50">
                     {row.map((cell, cellIndex) => {
-                      const isTenToKhai = tableData[0][cellIndex] === 'Tên tờ khai';
+                      const isTenToKhai = tableData[0][cellIndex] === 'Tờ khai/Phụ lục';
                       const maGiaoDichIndex = tableData[0].findIndex(h => h === 'Mã giao dịch');
                       const maGiaoDich = row[maGiaoDichIndex];
                       if (isTenToKhai && maGiaoDich) {

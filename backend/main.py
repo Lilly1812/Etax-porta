@@ -88,7 +88,7 @@ def access():
             f"&dse_processorState=initial"
             f"&dse_nextEventName=login"
         )
-
+        print(f"Generated URL: {url_new}")
         driver.get(url_new)
         driver.save_screenshot('new_page_full.png')
         return {"message": "Accessed login page."}
@@ -529,31 +529,69 @@ def download(ma_giao_dich: str):
         iframe = wait.until(EC.presence_of_element_located((By.ID, "tranFrame")))
         driver.switch_to.frame(iframe)
 
-        # Tìm thẻ <a> có onclick="downloadTkhai('ma_giao_dich')"
-        download_link = wait.until(EC.element_to_be_clickable(
-            (By.XPATH, f"//a[contains(@onclick, \"downloadTkhai('{ma_giao_dich}')\")]" )
-        ))
-        download_link.click()
-
-        # Đợi file tải về (giả sử file tải về thư mục download mặc định)
-        download_dir = 'D:/biznext/EtaxSystem/Etax-porta/downloads'  # Cập nhật đúng đường dẫn thư mục download của bạn
-        timeout = 30
-        file_path = None
-        for _ in range(timeout):
-            files = [os.path.join(download_dir, f) for f in os.listdir(download_dir)]
-            files = [f for f in files if os.path.isfile(f)]
-            if files:
-                file_path = max(files, key=os.path.getctime)
-                if not file_path.endswith('.crdownload'):
-                    break
-            time.sleep(1)
-        driver.switch_to.default_content()
-
-        if not file_path or not os.path.exists(file_path):
+        # Lấy session_id từ driver
+        session_id = driver.execute_script("return document.getElementsByName('dse_sessionId')[0].value;")
+        
+        # Lấy cookies từ driver
+        cookies = {cookie['name']: cookie['value'] for cookie in driver.get_cookies()}
+        
+        # Tạo URL download với định dạng mới
+        download_url = (
+            f"https://thuedientu.gdt.gov.vn/etaxnnt/Request"
+            f"?dse_sessionId={session_id}"
+            f"&dse_applicationId=-1"
+            f"&dse_operationName=traCuuToKhaiProc"
+            f"&dse_pageId=13"
+            f"&dse_processorState=viewTraCuuTkhai"
+            f"&dse_nextEventName=downTkhai"
+            f"&messageId={ma_giao_dich}"
+        )
+        
+        # Thiết lập headers
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+            'Accept': 'application/xml,application/x-pdf,application/octet-stream,*/*',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Referer': driver.current_url,
+            'Connection': 'keep-alive'
+        }
+        
+        # Tải file trực tiếp từ URL với cookies và headers
+        response = requests.get(
+            download_url,
+            cookies=cookies,
+            headers=headers,
+            verify=False,
+            stream=True,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            # Tạo file tạm thời để lưu nội dung
+            temp_file = BytesIO(response.content)
+            
+            # Xác định content type từ response
+            content_type = response.headers.get('Content-Type', 'application/xml')
+            
+            # Tạo tên file theo định dạng ETAX + mã giao dịch + .xml
+            filename = f"ETAX{ma_giao_dich}.xml"
+            
+            return StreamingResponse(
+                temp_file,
+                media_type=content_type,
+                headers={
+                    'Content-Disposition': f'attachment; filename={filename}',
+                    'Content-Type': content_type,
+                    'Content-Length': str(len(response.content))
+                }
+            )
+        else:
+            print(f"Download failed with status code: {response.status_code}")
+            print(f"Response content: {response.text}")
             raise HTTPException(status_code=404, detail="Không tìm thấy file tải về")
 
-        # Trả file về frontend
-        return FileResponse(file_path, filename=os.path.basename(file_path), media_type='application/octet-stream')
     except Exception as e:
+        print(f"Error in download: {str(e)}")
         driver.switch_to.default_content()
         raise HTTPException(status_code=500, detail=f"Lỗi tải file: {str(e)}")
