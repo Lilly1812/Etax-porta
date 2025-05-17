@@ -61,7 +61,7 @@ export default function RealTaxSearch() {
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow w-full mt-6 px-8">
+    <div className="p-6 bg-white rounded-lg shadow m-6 px-8">
       {/* Header */}
       <div className="flex items-center mb-2">
         <FiFileText size={26} className="text-green-700 mr-2" />
@@ -167,16 +167,16 @@ export default function RealTaxSearch() {
         </button>
       </div>
       {/* Table */}
-      <div className="bg-white border rounded-lg overflow-x-auto">
+      <div className="bg-white border border-gray-400 rounded-lg overflow-x-auto">
         {tableData.length > 0 ? (
-          <table className="w-full border border-gray-200 text-sm text-gray-700">
+          <table className="w-full text-sm text-gray-700">
             <thead className="bg-gray-50">
               <tr>
                 {tableData[0].map((header, idx) => (
                   <th
                     key={idx}
                     className={
-                      `px-4 py-3 border-b text-left font-medium text-gray-800 ${header === 'Tên tờ khai' ? 'w-32 max-w-xs truncate' : ''}`
+                      `px-4 py-3 border-b border-gray-400 text-left font-medium text-gray-800 ${header === 'Tên tờ khai' ? 'w-32' : ''}`
                     }
                   >
                     {header}
@@ -187,14 +187,14 @@ export default function RealTaxSearch() {
             <tbody>
               {tableData.slice(1).map((row, rowIndex) => {
                 return (
-                  <tr key={rowIndex} className="border-b hover:bg-gray-50">
+                  <tr key={rowIndex} className="border-b border-gray-400 hover:bg-gray-50">
                     {row.map((cell, cellIndex) => {
                       const isTenToKhai = tableData[0][cellIndex] === 'Tờ khai/Phụ lục';
                       const maGiaoDichIndex = tableData[0].findIndex(h => h === 'Mã giao dịch');
                       const maGiaoDich = row[maGiaoDichIndex];
                       if (isTenToKhai && maGiaoDich) {
                         return (
-                          <td key={cellIndex} className="px-4 py-3 border-b w-32 max-w-xs truncate">
+                          <td key={cellIndex} className="px-4 py-3 w-32 break-words">
                             <a
                               href={`http://localhost:8000/download?ma_giao_dich=${maGiaoDich}`}
                               className="text-blue-600 underline hover:text-blue-800"
@@ -210,7 +210,7 @@ export default function RealTaxSearch() {
                       return (
                         <td
                           key={cellIndex}
-                          className={`px-4 py-3 border-b ${tableData[0][cellIndex] === 'Tên tờ khai' ? 'w-32 max-w-xs truncate' : ''}`}
+                          className={`px-4 py-3 break-words ${tableData[0][cellIndex] === 'Tên tờ khai' ? 'w-32' : ''}`}
                         >
                           {cell}
                         </td>

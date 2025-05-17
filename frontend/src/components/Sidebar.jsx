@@ -1,56 +1,118 @@
 import React from "react";
+import { useCompany } from '../context/CompanyContext';
 import { MdDashboard, MdMail, MdStorage, MdSearch, MdFileDownload, MdFolderOpen, MdLibraryBooks, MdBusiness, MdAccountBalance, MdSettings, MdChevronLeft, MdChevronRight } from "react-icons/md";
+import logo from '../assets/logo.jpg'; // Import the logo
 
-const menuItems = [
-  { label: "Tổng quan", icon: <MdDashboard size={22} /> },
-  { label: "Tải tờ khai thuế", icon: <MdFileDownload size={22} /> },
-];
+export default function Sidebar({ active, onSelect, onCollapse }) {
+  const [collapsed, setCollapsed] = React.useState(false);
+  const { selectedCompany } = useCompany();
 
-export default class Sidebar extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      collapsed: false,
-    };
-  }
-
-  toggleCollapse = () => {
-    this.setState((prev) => ({ collapsed: !prev.collapsed }));
+  const handleCollapse = () => {
+    const newCollapsed = !collapsed;
+    setCollapsed(newCollapsed);
+    onCollapse?.(newCollapsed);
   };
 
-  render() {
-    const { active, onSelect } = this.props;
-    const { collapsed } = this.state;
-    return (
-      <div className={`bg-blue-900 text-white ${collapsed ? "w-20" : "w-60"} min-h-screen flex flex-col transition-all duration-300`}>
-        <div className="flex items-center justify-between p-6 border-b border-blue-800">
-          {!collapsed && <span className="font-bold text-xl">GAM INVOICE</span>}
-          <button
-            className="text-white focus:outline-none"
-            onClick={this.toggleCollapse}
-            title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+  // Define all menu items
+  const menuItems = [
+    
+    { 
+      id: 1,
+      label: "Tổng quan", 
+      icon: <MdDashboard size={22} />,
+      alwaysShow: false
+    },
+    { 
+      id: 2,
+      label: "Tải tờ khai thuế", 
+      icon: <MdFileDownload size={22} />,
+      alwaysShow: false
+    },
+    { 
+      id: 3,
+      label: "Tra cứu nghĩa vụ kê khai", 
+      icon: <MdSearch size={22} />,
+      alwaysShow: false
+    },
+    { 
+      id: 4,
+      label: "Nghĩa vụ nộp thuế", 
+      icon: <MdAccountBalance size={22} />,
+      alwaysShow: false
+    },
+    { 
+      id: 0,
+      label: "Công ty", 
+      icon: <MdBusiness size={22} />,
+      alwaysShow: true // This item is always visible
+    },
+  ];
+
+  // Filter menu items based on whether a company is selected
+  const visibleMenuItems = menuItems.filter(item => 
+    item.alwaysShow || selectedCompany
+  );
+
+  return (
+    <div className={`bg-white text-[#1f1f1f] ${collapsed ? "w-18" : "w-60"} h-screen flex flex-col transition-all duration-300 shadow-lg overflow-hidden`}>
+      <button 
+        className="flex items-center justify-center p-4 pb-2 shrink-0"
+        onClick={handleCollapse}
+        title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+      >
+        {!collapsed ? (
+          <div className="w-full flex items-center justify-center gap-2 border-b-2 border-gray-300 pb-4">
+            <img 
+              src="/favicon.png" 
+              alt="Logo" 
+              className="h-8 w-8 object-cover rounded"
+            />
+            <img 
+              src={logo} 
+              alt="BizNext Logo" 
+              className="h-8 w-auto object-contain"
+            />
+          </div>
+        ) : (
+          <img 
+            src="/favicon.png" 
+            alt="Logo" 
+            className="h-8 w-8 object-cover rounded"
+          />
+        )}
+      </button>
+
+      <div className="flex-1 overflow-y-auto">
+        {visibleMenuItems.map((item) => (
+          <div
+            key={item.id}
+            className={`text-sm rounded-3xl m-2 px-4 py-3 cursor-pointer hover:bg-[#234e98] hover:text-white transition flex items-center gap-3 ${
+              active === item.id ? "bg-[#e7eaee]" : ""
+            }`}
+            onClick={() => onSelect(item.id)}
+            title={collapsed ? item.label : undefined}
           >
-            {collapsed ? <MdChevronRight size={24} /> : <MdChevronLeft size={24} />}
-          </button>
-        </div>
-        <div className="flex-1">
-          {menuItems.map((item, idx) => (
-            <div
-              key={item.label}
-              className={`px-6 py-3 cursor-pointer hover:bg-blue-800 transition flex items-center gap-3 ${active === idx ? "bg-blue-800" : ""}`}
-              onClick={() => onSelect(idx)}
-              title={collapsed ? item.label : undefined}
-            >
-              <span>{item.icon}</span>
-              {!collapsed && <span>{item.label}</span>}
-            </div>
-          ))}
-        </div>
-        <div className="p-4 border-t border-blue-800 text-sm">
-          {!collapsed && <>Gói dịch vụ: <b>Advance</b></>}
-        </div>
-        <div className="p-4 text-xs text-blue-200">{!collapsed && "MinhBT11"}</div>
+            <span>{item.icon}</span>
+            {!collapsed && <span>{item.label}</span>}
+          </div>
+        ))}
       </div>
-    );
-  }
+
+      {selectedCompany && (
+        <div className="px-4">
+          <div className="p-4 border-t-2 border-gray-300 text-sm">
+            {!collapsed && <>Gói dịch vụ: <b>Advance</b></>}
+          </div>
+          <div className="p-4 pt-0 text-xs text-[#234e98]">
+            {!collapsed && (
+              <div className="flex flex-col gap-1">
+                <div>{selectedCompany.name}</div>
+                <div>MST: {selectedCompany.taxId}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 } 

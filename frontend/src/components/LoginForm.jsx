@@ -1,106 +1,245 @@
-import React, { useEffect, useState } from "react";
+// src/components/Login.js
+import React from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import RealTaxSearch from "./RealTaxSearch";
+import { FiRefreshCw, FiUser, FiLock, FiShield } from "react-icons/fi";
+import { useAuth } from "../context/AuthContext";
+import { useCompany } from "../context/CompanyContext";
 
-const LoginForm = () => {
-  const [captchaUrl, setCaptchaUrl] = useState("");
-  const [sessionId, setSessionId] = useState("");
-  const [form, setForm] = useState({ username: "", password: "", captcha: "" });
-  const [message, setMessage] = useState("");
+function Spinner({ size = 5 }) {
+  return (
+    <div
+      className={`w-${size} h-${size} border-2 border-white border-t-transparent rounded-full animate-spin`}
+    />
+  );
+}
+
+export default function LoginForm({ onLoginSuccess }) {
+  const [form, setForm] = useState({
+    username: "",
+    password: "",
+    captcha_code: "",
+  });
+  const [dates, setDates] = useState({ from: "", to: "" });
+  const [step, setStep] = useState("login");
+  const [captchaUrl, setCaptchaUrl] = useState(null);
+  const [loadingCaptcha, setLoadingCaptcha] = useState(false);
+  const [loadingLogin, setLoadingLogin] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [focusedInput, setFocusedInput] = useState(null);
+  const { handleLogin } = useAuth();
+  const { selectedCompany } = useCompany();
 
   useEffect(() => {
-    fetch("http://localhost:8000/captcha")
-      .then(async (res) => {
-        if (res.ok) {
-          console.log(
-            "Response headers:",
-            Object.fromEntries(res.headers.entries())
-          );
-          const blob = await res.blob();
-          const sessionId = res.headers.get("x-session-id");
-          setSessionId(sessionId);
-          setCaptchaUrl(URL.createObjectURL(blob));
-          console.log("Session ID:", sessionId);
-        } else {
-          setMessage("Không thể tải captcha.");
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching captcha:", error);
-        setMessage("Có lỗi khi tải captcha.");
-      });
+    const loadCaptcha = async () => {
+      try {
+        await axios.get("http://localhost:8000/access");
+        setCaptchaUrl(`http://localhost:8000/captcha?ts=${Date.now()}`);
+      } catch (err) {
+        console.error("Failed to load captcha", err);
+      }
+    };
+    loadCaptcha();
   }, []);
 
-  const handleLogin = async (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    const response = await fetch("http://localhost:8000/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        session_id: sessionId,
-      username: form.username, 
-      password: form.password,
-      captcha: form.captcha,
-      }),
-    });
-
-    // Make sure you're only parsing the response once
-    const data = await response.json();
-
-    if (data.success) {
-      console.log("Login successful:", data.message);
-      alert(data.message);
-    } else {
-      console.error("Login failed:", data.message);
-      alert(data.message);
+    setLoadingLogin(true);
+    
+    try {
+      // Here you would typically make an API call to authenticate
+      // For now, we'll simulate a login
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      handleLogin();
+      // Call the onLoginSuccess callback to trigger navigation
+      onLoginSuccess?.();
+    } catch (error) {
+      console.error('Login failed:', error);
+    } finally {
+      setLoadingLogin(false);
     }
   };
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <form
-        onSubmit={handleLogin}
-        className="bg-white p-8 rounded-lg shadow-md space-y-4 w-full max-w-md"
-      >
-        <h2 className="text-xl font-semibold">Đăng nhập thuế điện tử</h2>
-        <input
-          type="text"
-          placeholder="Mã số thuế"
-          className="input"
-          value={form.username}
-          onChange={(e) => setForm({ ...form, username: e.target.value })}
-        />
-        <input
-          type="password"
-          placeholder="Mật khẩu"
-          className="input"
-          value={form.password}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
-        />
-        <div className="flex items-center space-x-2">
-          {captchaUrl && (
-            <img src={captchaUrl} alt="captcha" className="h-12 border" />
-          )}
-          <input
-            type="text"
-            placeholder="Mã captcha"
-            className="input flex-1"
-            value={form.captcha}
-            onChange={(e) => setForm({ ...form, captcha: e.target.value })}
-          />
-        </div>
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Đăng nhập
-        </button>
-        {message && (
-          <div className="text-center text-sm text-red-600 mt-2">{message}</div>
-        )}
-      </form>
-    </div>
-  );
-};
+  const inputClasses = (name) => `
+    w-full bg-white border-2 text-gray-800 placeholder-gray-400 
+    rounded-xl px-4 py-3 pl-10
+    transition-all duration-300 ease-in-out
+    focus:outline-none focus:ring-2 focus:ring-[#4680ef] focus:border-transparent
+    ${focusedInput === name ? 'border-[#4680ef] shadow-lg shadow-blue-100' : 'border-gray-200 hover:border-gray-300'}
+  `;
 
-export default LoginForm;
+  return (
+    step === "login" ? (
+      <div className="flex h-full bg-gray-50">
+        {/* Left side - Login Form */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-[480px] p-8 rounded-2xl shadow-lg bg-white transition-all duration-500 hover:shadow-xl">
+            <h1 className="text-2xl font-bold text-center mb-8 text-[#1f1f1f]">
+              ĐĂNG NHẬP HỆ THỐNG
+              <div className="text-lg font-normal text-gray-500 mt-1">thuedientu.gdt.gov.vn</div>
+            </h1>
+            
+            {selectedCompany && (
+              <div className="mb-6 p-4 bg-blue-50 rounded-xl">
+                <div className="text-sm font-medium text-blue-800">{selectedCompany.name}</div>
+                <div className="text-sm text-blue-600">MST: {selectedCompany.taxId}</div>
+              </div>
+            )}
+            
+            <form onSubmit={handleLoginSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <div className="relative">
+                  <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    className={inputClasses('username')}
+                    placeholder="Tên đăng nhập"
+                    value={form.username}
+                    onChange={(e) => setForm({ ...form, username: e.target.value })}
+                    onFocus={() => setFocusedInput('username')}
+                    onBlur={() => setFocusedInput(null)}
+                  />
+                </div>
+
+                <div className="relative">
+                  <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="password"
+                    className={inputClasses('password')}
+                    placeholder="Mật khẩu"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    onFocus={() => setFocusedInput('password')}
+                    onBlur={() => setFocusedInput(null)}
+                  />
+                </div>
+
+                <div className="relative">
+                  <FiShield className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <div className="flex gap-3">
+                    <input
+                      className={inputClasses('captcha')}
+                      placeholder="Mã xác nhận"
+                      value={form.captcha_code}
+                      onChange={(e) => setForm({ ...form, captcha_code: e.target.value })}
+                      onFocus={() => setFocusedInput('captcha')}
+                      onBlur={() => setFocusedInput(null)}
+                    />
+                    <div className="flex items-center gap-2 bg-gray-50 px-3 rounded-xl border-2 border-gray-200">
+                      {captchaUrl ? (
+                        <img
+                          src={captchaUrl}
+                          alt="captcha"
+                          className="h-8"
+                        />
+                      ) : (
+                        <div className="h-8 w-24 flex items-center justify-center text-gray-400 text-sm animate-pulse">
+                          Đang tải...
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            setLoadingCaptcha(true);
+                            await axios.get("http://localhost:8000/refresh");
+                            setCaptchaUrl(`http://localhost:8000/captcha?ts=${Date.now()}`);
+                          } catch (err) {
+                            console.error("Captcha reload failed", err);
+                          } finally {
+                            setLoadingCaptcha(false);
+                          }
+                        }}
+                        className="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
+                      >
+                        {loadingCaptcha ? (
+                          <Spinner size={4} />
+                        ) : (
+                          <FiRefreshCw className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="remember"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-[#4680ef] focus:ring-[#4680ef] transition-colors"
+                />
+                <label htmlFor="remember" className="ml-2 block text-sm text-gray-600">
+                  Nhớ (tại máy) thông tin đăng nhập cho lần sau
+                </label>
+              </div>
+
+              <div className="text-sm text-center text-yellow-600 bg-yellow-50 p-3 rounded-xl">
+                Cảnh báo không lưu và thu thập TK thuế của bạn
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-[#4680ef] text-white p-3 rounded-xl font-medium 
+                         hover:bg-blue-600 active:bg-blue-700 
+                         transition-all duration-300 ease-in-out
+                         transform hover:-translate-y-0.5 active:translate-y-0
+                         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0
+                         flex justify-center items-center gap-2 shadow-lg shadow-blue-100"
+                disabled={loadingLogin}
+              >
+                {loadingLogin ? <Spinner /> : "Đăng nhập"}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Right side - Information and Policy */}
+        <div className="w-[600px] bg-white p-12 flex flex-col justify-center border-l border-gray-200">
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Hướng dẫn kê khai thuế điện tử</h2>
+              <div className="space-y-4 text-gray-600">
+                <p className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">1</span>
+                  <span>Đăng nhập bằng tài khoản thuế điện tử của bạn</span>
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">2</span>
+                  <span>Chọn loại tờ khai thuế cần kê khai</span>
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">3</span>
+                  <span>Điền thông tin theo hướng dẫn và gửi tờ khai</span>
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Chính sách & Quy định</h2>
+              <div className="space-y-3 text-gray-600">
+                <p>• Bảo mật thông tin cá nhân và doanh nghiệp</p>
+                <p>• Tuân thủ quy định của pháp luật về thuế</p>
+                <p>• Lưu trữ và bảo quản chứng từ điện tử</p>
+                <p>• Thời hạn nộp tờ khai và thanh toán thuế</p>
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Hỗ trợ</h2>
+              <div className="space-y-3 text-gray-600">
+                <p>• Tổng đài hỗ trợ: 1900 xxxx</p>
+                <p>• Email: support@thuedientu.gdt.gov.vn</p>
+                <p>• Thời gian hỗ trợ: 8:00 - 17:30 (Thứ 2 - Thứ 6)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <RealTaxSearch />
+    )
+  );
+}
