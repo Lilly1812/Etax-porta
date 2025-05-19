@@ -43,23 +43,54 @@ export default function LoginForm({ onLoginSuccess }) {
     loadCaptcha();
   }, []);
 
-  const handleLoginSubmit = async (e) => {
-    e.preventDefault();
-    setLoadingLogin(true);
-    
-    try {
-      // Here you would typically make an API call to authenticate
-      // For now, we'll simulate a login
-      await new Promise(resolve => setTimeout(resolve, 1000));
+const handleLoginSubmit = async (e) => {
+  e.preventDefault();
+  setLoadingLogin(true);
+  
+  // Validate form
+  if (!form.username || !form.password || !form.captcha_code) {
+    alert('Vui lòng điền đầy đủ thông tin đăng nhập');
+    setLoadingLogin(false);
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('username', form.username);
+    formData.append('password', form.password);
+    formData.append('captcha_code', form.captcha_code);
+
+    const response = await axios.post('http://localhost:8000/login', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    if (response.data && response.data.message === "Login successful") {
       handleLogin();
-      // Call the onLoginSuccess callback to trigger navigation
       onLoginSuccess?.();
-    } catch (error) {
-      console.error('Login failed:', error);
-    } finally {
-      setLoadingLogin(false);
+    } else {
+      throw new Error(response.data?.message || 'Đăng nhập thất bại');
     }
-  };
+  } catch (error) {
+    const errorMessage = error.response?.data?.detail?.message || 
+                        error.response?.data?.message || 
+                        error.message || 
+                        'Đăng nhập thất bại';
+    alert(errorMessage);
+    
+    // Refresh captcha on login failure
+    try {
+      await axios.get("http://localhost:8000/refresh");
+      setCaptchaUrl(`http://localhost:8000/captcha?ts=${Date.now()}`);
+      setForm(prev => ({ ...prev, captcha_code: '' }));
+    } catch (err) {
+      console.error("Failed to refresh captcha", err);
+    }
+  } finally {
+    setLoadingLogin(false);
+  }
+};
 
   const inputClasses = (name) => `
     w-full bg-white border-2 text-gray-800 placeholder-gray-400 

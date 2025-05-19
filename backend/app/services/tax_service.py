@@ -11,11 +11,19 @@ from selenium.common.exceptions import NoSuchElementException, WebDriverExceptio
 def check_session(driver):
     try:
         current_url = driver.current_url
-        if current_url == "data:," or "login" in current_url.lower():
+        print(f"[DEBUG] Current URL: {current_url}")  # In ra URL hiện tại
+
+        if current_url == "data:,":
+            print("[DEBUG] Session invalid: current_url is 'data:,'")
             return False
+        if "login" in current_url.lower():
+            print("[DEBUG] Session invalid: current_url contains 'login'")
+            return False
+
+        print("[DEBUG] Session is valid")
         return True
     except Exception as e:
-        print(f"Error checking session: {str(e)}")
+        print(f"[ERROR] Error checking session: {str(e)}")
         return False
 
 def access_login_page(driver, wait, url_manager):
@@ -144,83 +152,134 @@ def refresh_captcha(driver, wait):
 
 def login(driver, wait, username, password, captcha_code):
     try:
-        driver.find_element(By.ID, "_userName").send_keys(username)
-        driver.find_element(By.ID, "password").send_keys(password)
-        driver.find_element(By.ID, "vcode").send_keys(captcha_code)
-        driver.find_element(By.ID, "dangnhap").click()
-        time.sleep(2)
         try:
+            username_input = wait.until(EC.presence_of_element_located((By.ID, "_userName")))
+            password_input = wait.until(EC.presence_of_element_located((By.ID, "password")))
+            captcha_input = wait.until(EC.presence_of_element_located((By.ID, "vcode")))
+            login_button = wait.until(EC.element_to_be_clickable((By.ID, "dangnhap")))
+
+            username_input.clear()
+            username_input.send_keys(username)
+            password_input.clear()
+            password_input.send_keys(password)
+            captcha_input.clear()
+            captcha_input.send_keys(captcha_code)
+
+            login_button.click()
+            time.sleep(3)  # Wait for login process
+            
+            # Check for login success
             if "login" in driver.current_url.lower():
+                error_messages = driver.find_elements(By.CSS_SELECTOR, ".error-message, .alert-danger")
+                if error_messages:
+                    error_text = error_messages[0].text.strip()
+                    print(f"[DEBUG] Found error message: {error_text}")
+                    raise HTTPException(
+                        status_code=401, 
+                        detail={
+                            "message": f"Đăng nhập thất bại: {error_text}",
+                            "refresh_captcha": True
+                        }
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=401, 
+                        detail={
+                            "message": "Đăng nhập thất bại, vui lòng thử lại",
+                            "refresh_captcha": True
+                        }
+                    )
+            
+            try:
+                menu = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "li.li-3")))
+                menu.click()
+                time.sleep(2)
+                
+                search_menu = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "li[onclick*='traCuuToKhaiProc']")))
+                search_menu.click()
+                time.sleep(2)
+                
+                return {"message": "Login successful"}
+                
+            except Exception as nav_error:
+                print(f"[ERROR] Navigation error: {str(nav_error)}")
                 raise HTTPException(
-                    status_code=401, 
+                    status_code=500,
                     detail={
-                        "message": "Đăng nhập thất bại, vui lòng thử lại",
-                        "refresh_captcha": True
+                        "message": "Đăng nhập thành công nhưng không thể chuyển trang",
+                        "refresh_captcha": False
                     }
                 )
-            error_messages = driver.find_elements(By.CSS_SELECTOR, ".error-message, .alert-danger")
-            if error_messages:
-                error_text = error_messages[0].text.strip()
-                raise HTTPException(
-                    status_code=401, 
-                    detail={
-                        "message": f"Đăng nhập thất bại: {error_text}",
-                        "refresh_captcha": True
-                    }
-                )
-            menu = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "li.li-3")))
-            menu.click()
-            time.sleep(1)
-            search_menu = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "li[onclick*='traCuuToKhaiProc']")))
-            search_menu.click()
-            time.sleep(1)
-            return {"message": "Login successful"}
-        except NoSuchElementException:
+                
+        except NoSuchElementException as e:
+            print(f"[ERROR] Element not found: {str(e)}")
             raise HTTPException(
-                status_code=401, 
+                status_code=500,
                 detail={
-                    "message": "Đăng nhập thất bại, vui lòng thử lại",
+                    "message": "Không thể tìm thấy các phần tử đăng nhập",
                     "refresh_captcha": True
                 }
             )
-    except Exception as e:
+            
+    except WebDriverException as e:
+        print(f"[ERROR] WebDriver error: {str(e)}")
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail={
-                "message": f"Lỗi đăng nhập: {str(e)}",
+                "message": "Lỗi trình duyệt, vui lòng thử lại",
+                "refresh_captcha": True
+            }
+        )
+        
+    except Exception as e:
+        print(f"[ERROR] Unexpected error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": f"Lỗi không xác định: {str(e)}",
                 "refresh_captcha": True
             }
         )
 
 def search(driver, wait, from_date, to_date, maTKhai):
     try:
+        
         if not check_session(driver):
             raise HTTPException(status_code=401, detail="Session expired, please login again")
+
         current_url = driver.current_url
+
         if current_url == "data:," or "login" in current_url.lower():
             driver.get("https://thuedientu.gdt.gov.vn/etaxnnt/Request")
             time.sleep(2)
             raise HTTPException(status_code=401, detail="Please login first")
+
         if "traCuuToKhaiProc" not in current_url:
             try:
                 menu = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "li.li-3")))
                 menu.click()
                 time.sleep(2)
+
                 search_menu = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "li[onclick*='traCuuToKhaiProc']")))
                 search_menu.click()
                 time.sleep(2)
             except Exception as e:
+                print("[ERROR] Failed to navigate to search page:", str(e))
                 raise HTTPException(status_code=500, detail=f"Failed to navigate to search page: {str(e)}")
+
         try:
             iframe = wait.until(EC.presence_of_element_located((By.ID, "tranFrame")))
             driver.switch_to.frame(iframe)
         except Exception as e:
+            print("[ERROR] Failed to switch to iframe:", str(e))
             driver.switch_to.default_content()
             raise HTTPException(status_code=500, detail=f"Failed to switch to iframe: {str(e)}")
+
         if maTKhai != "00":
             try:
                 tax_type_select = wait.until(EC.presence_of_element_located((By.ID, "maTKhai")))
                 driver.execute_script("arguments[0].value = '';", tax_type_select)
+                
                 script = f"""
                     var select = arguments[0];
                     var value = arguments[1];
@@ -233,7 +292,9 @@ def search(driver, wait, from_date, to_date, maTKhai):
                     }}
                 """
                 driver.execute_script(script, tax_type_select, maTKhai)
+
                 selected_value = driver.execute_script("return arguments[0].value;", tax_type_select)
+
                 if selected_value != maTKhai:
                     tax_type_select.click()
                     time.sleep(1)
@@ -241,7 +302,9 @@ def search(driver, wait, from_date, to_date, maTKhai):
                     option.click()
                     time.sleep(1)
             except Exception as e:
+                print("[WARN] Failed to select maTKhai but continuing:", str(e))
                 pass
+
         try:
             from_input = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input#qryFromDate")))
             to_input = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input#qryToDate")))
@@ -250,24 +313,34 @@ def search(driver, wait, from_date, to_date, maTKhai):
             driver.execute_script("arguments[0].value = '';", to_input)
             driver.execute_script("arguments[0].value = arguments[1];", to_input, to_date)
         except Exception as e:
+            print("[ERROR] Failed to set dates:", str(e))
             driver.switch_to.default_content()
             raise HTTPException(status_code=500, detail=f"Failed to set dates: {str(e)}")
+
         try:
             search_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "input.button_vuong.awesome")))
             driver.execute_script("arguments[0].click();", search_button)
         except Exception as e:
+            print("[ERROR] Failed to click search button:", str(e))
             driver.switch_to.default_content()
             raise HTTPException(status_code=500, detail=f"Failed to click search button: {str(e)}")
+
         time.sleep(3)
         driver.switch_to.default_content()
         return {"message": "Search completed"}
+
     except NoSuchElementException as e:
+        print("[ERROR] Element not found:", str(e))
         driver.switch_to.default_content()
         raise HTTPException(status_code=400, detail=f"Element not found: {str(e)}")
+
     except WebDriverException as e:
+        print("[ERROR] Selenium error:", str(e))
         driver.switch_to.default_content()
         raise HTTPException(status_code=500, detail=f"Selenium error: {str(e)}")
+
     except Exception as e:
+        print("[ERROR] Unexpected error:", str(e))
         driver.switch_to.default_content()
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 

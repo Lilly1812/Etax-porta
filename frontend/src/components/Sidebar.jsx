@@ -54,7 +54,7 @@ export default function Sidebar({ active, onSelect, onCollapse }) {
   );
 
   return (
-    <div className={`bg-white text-[#1f1f1f] ${collapsed ? "w-18" : "w-60"} h-screen flex flex-col transition-all duration-300 shadow-lg overflow-hidden`}>
+    <div className={` bg-white text-[#1f1f1f] ${collapsed ? "w-18" : "w-60"} h-screen flex flex-col transition-all duration-300 shadow-lg overflow-hidden`}>
       <button 
         className="flex items-center justify-center p-4 pb-2 shrink-0"
         onClick={handleCollapse}
