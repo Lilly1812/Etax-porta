@@ -14,8 +14,8 @@ const MOCK_USERS = [
     password: 'admin123',
   },
   {
-    username: 'user',
-    password: 'user123',
+    username: '0109798789-ql',
+    password: 'tct@123',
   }
 ];
 

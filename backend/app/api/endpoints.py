@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException, Form
 from app.utils.selenium_utils import create_driver
 from app.services import tax_service
+from app.utils.url_manager import URLStateManager
 
 router = APIRouter()
 
 driver, wait = create_driver()
-url_new_holder = [""]
+url_manager = URLStateManager()
 
 @router.get("/check-session")
 def check_session_status():
@@ -16,7 +17,7 @@ def check_session_status():
 
 @router.get("/access")
 def access():
-    return tax_service.access_login_page(driver, wait, url_new_holder)
+    return tax_service.access_login_page(driver, wait, url_manager)
 
 @router.get("/captcha")
 def get_captcha():
@@ -24,7 +25,7 @@ def get_captcha():
 
 @router.get("/refresh")
 def refresh():
-    return tax_service.refresh(driver, url_new_holder)
+    return tax_service.refresh(driver, url_manager)
 
 @router.get("/refresh-captcha")
 def refresh_captcha():

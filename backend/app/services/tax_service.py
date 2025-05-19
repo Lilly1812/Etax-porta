@@ -18,7 +18,7 @@ def check_session(driver):
         print(f"Error checking session: {str(e)}")
         return False
 
-def access_login_page(driver, wait, url_new_holder):
+def access_login_page(driver, wait, url_manager):
     url_initial = "https://thuedientu.gdt.gov.vn/etaxnnt/Request"
     driver.get(url_initial)
     try:
@@ -35,7 +35,7 @@ def access_login_page(driver, wait, url_new_holder):
             f"&dse_processorState=initial"
             f"&dse_nextEventName=login"
         )
-        url_new_holder[0] = url_new
+        url_manager.current_url = url_new
         driver.get(url_new)
         return {"message": "Accessed login page."}
     except TimeoutException:
@@ -90,8 +90,8 @@ def get_captcha(driver, wait):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting captcha: {str(e)}")
 
-def refresh(driver, url_new_holder):
-    driver.get(url_new_holder[0])
+def refresh(driver, url_manager):
+    driver.get(url_manager.current_url)
     time.sleep(2)
     return {"message": "Captcha refreshed"}
 
