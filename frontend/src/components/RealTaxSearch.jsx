@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { FiSearch, FiFileText } from "react-icons/fi";
+import { toast } from 'react-toastify';
 
 function Spinner({ size = 8 }) {
   return (
@@ -54,7 +55,8 @@ export default function RealTaxSearch() {
       const res = await axios.get("http://localhost:8000/display");
       setTableData(res.data.table);
     } catch (err) {
-      alert("Tra cứu thất bại. Vui lòng thử lại.");
+      // alert("Tra cứu thất bại. Vui lòng thử lại.");
+      toast.error('Tra cứu thất bại. Vui lòng thử lại.');
     } finally {
       setLoadingSearch(false);
     }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png';
 import bgImage from '../assets/bg2.jpg';
+import RegisterForm from './RegisterForm'; // <-- Bỏ comment dòng này
 
 // Mock user data
 const MOCK_USERS = [
@@ -27,8 +28,16 @@ function StartLogin() {
   });
   const [error, setError] = useState('');
   const { setStep } = useAuth();
+  const [showRegister, setShowRegister] = useState(false); // <-- Bỏ comment
 
+  // Kiểm tra đăng nhập với cả mock và localStorage
   const validateLogin = (username, password) => {
+    // Kiểm tra localStorage
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    if (users.find(u => u.username === username && u.password === password)) {
+      return true;
+    }
+    // Kiểm tra mock
     const user = MOCK_USERS.find(
       (user) => user.username === username && user.password === password
     );
@@ -45,7 +54,7 @@ function StartLogin() {
       return;
     }
 
-    // Check credentials against mock data
+    // Check credentials against mock data and localStorage
     if (validateLogin(form.username, form.password)) {
       // Store in localStorage if remember me is checked
       if (form.rememberMe) {
@@ -53,11 +62,15 @@ function StartLogin() {
       } else {
         localStorage.removeItem('rememberedUser');
       }
-      
       setStep("search");
     } else {
       setError('Tên đăng nhập hoặc mật khẩu không đúng.');
     }
+  };
+
+  const handleRegisterSuccess = () => {
+    setShowRegister(false);
+    // Có thể hiển thị thông báo hoặc tự động điền username vào form đăng nhập
   };
 
   // Load remembered username if exists
@@ -150,6 +163,7 @@ function StartLogin() {
             <div className="text-center">
               <button
                 type="button"
+                onClick={() => setShowRegister(true)}
                 className="w-full bg-green-500 text-white py-3 px-4 rounded-xl hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 font-medium text-sm"
               >
                 Tạo tài khoản mới
@@ -173,8 +187,14 @@ function StartLogin() {
           </div>
         </div>
       </div>
+      {showRegister && (
+        <RegisterForm
+          onClose={() => setShowRegister(false)}
+          onSuccess={handleRegisterSuccess}
+        />
+      )}
     </div>
   );
 }
 
-export default StartLogin; 
+export default StartLogin;
