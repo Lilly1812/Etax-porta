@@ -1,3 +1,4 @@
+// context/AuthContext.jsx
 import React, { createContext, useContext, useState } from 'react';
 
 const AuthContext = createContext();
@@ -14,7 +15,6 @@ export function AuthProvider({ children }) {
   };
 
   const handleCompanyChange = (companyTaxId) => {
-    // When company changes, reset auth state
     setIsLoggedIn(false);
     setCurrentCompanyAuth(null);
     setStep("login");
@@ -24,16 +24,20 @@ export function AuthProvider({ children }) {
     setIsLoggedIn(true);
     setStep("authenticated");
   };
+  const goToRegister = () => setStep("register");
+  const goToLogin = () => setStep("start");
 
   return (
-    <AuthContext.Provider value={{ 
-      step, 
-      setStep, 
+    <AuthContext.Provider value={{
+      step,
+      setStep,
       handleLogout,
       isLoggedIn,
       handleLogin,
       handleCompanyChange,
-      currentCompanyAuth
+      currentCompanyAuth,
+      goToRegister, 
+      goToLogin     
     }}>
       {children}
     </AuthContext.Provider>
@@ -46,4 +50,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-} 
+}

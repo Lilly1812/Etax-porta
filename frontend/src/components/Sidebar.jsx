@@ -46,6 +46,12 @@ export default function Sidebar({ active, onSelect, onCollapse }) {
       icon: <MdBusiness size={22} />,
       alwaysShow: true // This item is always visible
     },
+    { 
+      id: 5,
+      label: "Mở file XML", 
+      icon: <MdBusiness size={22} />,
+      alwaysShow: true // This item is always visible
+    },
   ];
 
   // Filter menu items based on whether a company is selected

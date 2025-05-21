@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { CompanyProvider } from '../context/CompanyContext';
 import { useAuth } from '../context/AuthContext';
 import { useSidebar } from '../context/SidebarContext';
-import Sidebar from './Sidebar';
-import Header from './Header';
-import Company from './Company';
-import RealTaxSearch from './RealTaxSearch';
-import LoginForm from './LoginForm';
-import TaxObligationSearch from './TaxObligationSearch';
-import TaxPayment from './TaxPayment';
+import Sidebar from '../components/Sidebar';
+import Header from '../components/Header';
+import Company from '../pages/Company';
+import RealTaxSearch from '../pages/RealTaxSearch';
+import LoginForm from '../components/TaxsystemLogin';
+import TaxObligationSearch from '../pages/TaxObligationSearch';
+import TaxPayment from '../pages/TaxPayment';
 
 export default function MainLayout() {
   const [activeMenu, setActiveMenu] = useState(0);
