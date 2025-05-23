@@ -7,6 +7,11 @@ from fastapi.responses import StreamingResponse
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, WebDriverException, TimeoutException
+import json
+import os
+from datetime import datetime
+import pandas as pd
+from contextlib import contextmanager
 
 def check_session(driver):
     try:
@@ -487,3 +492,204 @@ def download(driver, wait, ma_giao_dich):
             driver.switch_to.default_content()
         except:
             pass
+
+@contextmanager
+def safe_file_operation():
+    try:
+        yield
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Không tìm thấy file to_khai_thue.json")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Lỗi khi phân tích file JSON")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi khi xử lý file: {str(e)}")
+
+def displaylisttax(driver, wait, fromdate=None, todate=None):
+    try:
+        print(f"[DEBUG] displaylisttax called with fromdate={fromdate}, todate={todate}")
+        
+        if not check_session(driver):
+            raise HTTPException(status_code=401, detail="Session expired, please login again")
+
+        # Đọc file JSON
+        current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        json_path = os.path.join(current_dir, 'to_khai_thue.json')
+        print(f"[DEBUG] JSON file path: {json_path}")
+
+        tax_data = None
+        with safe_file_operation():
+            with open(json_path, 'r', encoding='utf-8') as file:
+                tax_data = json.load(file)
+
+        if not tax_data:
+            raise HTTPException(status_code=500, detail="Không thể đọc dữ liệu từ file")
+        
+        print(f"[DEBUG] Loaded tax data with {len(tax_data)} categories")
+        for category, items in tax_data.items():
+            print(f"[DEBUG] Category '{category}': {len(items)} items")
+
+        # Lấy năm hiện tại
+        current_year = datetime.now().year
+        print(f"[DEBUG] Current year: {current_year}")
+
+        try:
+            # Gọi hàm xử lý danh sách tờ khai
+            df_result = hien_thi_to_khai_phai_nop(tax_data, current_year, theo_quy=True)
+            print(f"[DEBUG] Generated {len(df_result)} required tax declarations")
+            print(f"[DEBUG] Columns: {list(df_result.columns)}")
+            print(f"[DEBUG] First 3 declarations:")
+            for i, row in df_result.head(3).iterrows():
+                print(f"[DEBUG]   {i}: {row['Tên tờ khai']} - {row['Kỳ kê khai']}")
+
+            # Xác định khoảng thời gian để tìm kiếm
+            search_fromdate = fromdate
+            search_todate = todate
+            
+            # Nếu không có ngày được cung cấp, sử dụng toàn bộ năm hiện tại
+            if not fromdate or not todate:
+                search_fromdate = f"01/01/{current_year}"
+                search_todate = f"31/12/{current_year}"
+            
+            print(f"[DEBUG] Search period: {search_fromdate} to {search_todate}")
+
+            # Lọc theo khoảng thời gian nếu có
+            if fromdate and todate:
+                print(f"[DEBUG] Filtering by date range: {fromdate} to {todate}")
+                from_date = datetime.strptime(fromdate, "%d/%m/%Y")
+                to_date = datetime.strptime(todate, "%d/%m/%Y")
+                print(f"[DEBUG] Parsed dates: from {from_date} to {to_date}")
+                
+                print(f"[DEBUG] Before filtering: {len(df_result)} rows")
+                print(f"[DEBUG] Sample due dates before filtering:")
+                for i, row in df_result.head(5).iterrows():
+                    print(f"[DEBUG]   Row {i}: {row['Tên tờ khai']} - Due: {row['Hạn nộp']}")
+                
+                # Chuyển đổi cột Hạn nộp thành datetime để so sánh
+                df_result['Hạn nộp dt'] = pd.to_datetime(df_result['Hạn nộp'], format='%d/%m/%Y', errors='coerce')
+                
+                print(f"[DEBUG] Sample parsed due dates:")
+                for i, row in df_result.head(5).iterrows():
+                    print(f"[DEBUG]   Row {i}: {row['Hạn nộp']} -> {row['Hạn nộp dt']}")
+                
+                # Lọc dữ liệu trong khoảng thời gian
+                mask = (df_result['Hạn nộp dt'] >= from_date) & (df_result['Hạn nộp dt'] <= to_date)
+                print(f"[DEBUG] Filter mask: {mask.sum()} rows match out of {len(mask)}")
+                
+                df_result = df_result[mask]
+                
+                # Xóa cột tạm thời
+                df_result = df_result.drop('Hạn nộp dt', axis=1)
+                print(f"[DEBUG] After date filtering: {len(df_result)} declarations remain")
+            else:
+                print(f"[DEBUG] No date filtering applied, keeping all {len(df_result)} rows")
+
+            # Chuyển thành bảng hiển thị với trạng thái mặc định là "Chưa hoàn thành"
+            table_data = []
+            table_data.append(["STT", "Tên tờ khai", "Mã", "Kỳ kê khai", "Hạn nộp", "Trạng thái"])
+
+            print(f"[DEBUG] Processing {len(df_result)} declarations")
+            for idx, row in df_result.iterrows():
+                table_data.append([
+                    str(idx + 1),
+                    row["Tên tờ khai"],
+                    row["Mã"],
+                    row["Kỳ kê khai"],
+                    row["Hạn nộp"],
+                    "Chưa hoàn thành"  # Default status, will be updated in frontend
+                ])
+
+            total_count = len(table_data) - 1  # Trừ header row
+            
+            print(f"[DEBUG] Final result: {total_count} tax obligations")
+
+            return {
+                "message": f"Danh sách {total_count} tờ khai doanh nghiệp phải nộp" + 
+                          (f" từ {fromdate} đến {todate}" if fromdate and todate else f" năm {current_year}"),
+                "data": table_data
+            }
+        except Exception as e:
+            print(f"[ERROR] Error in processing: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Lỗi khi xử lý dữ liệu: {str(e)}")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Unexpected error in displaylisttax: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Lỗi khi lấy danh sách tờ khai: {str(e)}")
+    finally:
+        try:
+            driver.switch_to.default_content()
+        except:
+            pass
+
+def tinh_han_nop(ky: str) -> str:
+    try:
+        print(f"[DEBUG] Calculating due date for period: '{ky}'")
+        if ky.startswith("Q"):
+            quy, nam = ky.split("/")
+            thang = int(quy[1]) * 3
+            han = datetime(int(nam), thang, 30)  # giả định ngày 30
+            result = han.strftime("%d/%m/%Y")
+            print(f"[DEBUG] Quarter {ky} -> Due date: {result}")
+            return result
+        elif ky.startswith("T"):
+            thang, nam = ky[1:].split("/")
+            han = datetime(int(nam), int(thang), 20)
+            result = han.strftime("%d/%m/%Y")
+            print(f"[DEBUG] Month {ky} -> Due date: {result}")
+            return result
+        elif ky.isdigit():
+            result = f"31/03/{int(ky)+1}"  # Hạn quyết toán năm sau
+            print(f"[DEBUG] Year {ky} -> Due date: {result}")
+            return result
+        else:
+            result = "Theo từng lần phát sinh"
+            print(f"[DEBUG] Other period {ky} -> Due date: {result}")
+            return result
+    except Exception as e:
+        print(f"[DEBUG] Error calculating due date for '{ky}': {str(e)}")
+        return "Không xác định"
+
+def hien_thi_to_khai_phai_nop(data, nam, theo_quy=True):
+    bang_ket_qua = []
+
+    for loai_thue, danh_sach_to_khai in data.items():
+        for tk in danh_sach_to_khai:
+            ten = tk["ten_to_khai"]
+            ma = tk["ten_viet_tat"]
+            ky_ke_khai = tk["ky_ke_khai"].strip().lower()
+
+            if ky_ke_khai == "tháng/quý":
+                if theo_quy:
+                    ky = [f"Q{i}/{nam}" for i in range(1, 5)]
+                else:
+                    ky = [f"T{m}/{nam}" for m in range(1, 13)]
+            elif ky_ke_khai == "quý":
+                ky = [f"Q{i}/{nam}" for i in range(1, 5)]
+            elif ky_ke_khai == "tháng":
+                ky = [f"T{m}/{nam}" for m in range(1, 13)]
+            elif ky_ke_khai == "năm":
+                ky = [str(nam)]
+            elif ky_ke_khai == "từng lần phát sinh":
+                ky = ["Từng lần phát sinh"]
+            else:
+                ky = ["Không xác định"]
+
+            for k in ky:
+                han_nop = tinh_han_nop(k)
+                bang_ket_qua.append({
+                    "Loại thuế": loai_thue,
+                    "Tên tờ khai": ten,
+                    "Mã": ma,
+                    "Kỳ kê khai": k,
+                    "Hạn nộp": han_nop,
+                    "Trạng thái": "Chưa hoàn thành"
+                })
+
+    df = pd.DataFrame(bang_ket_qua)
+    return df
+

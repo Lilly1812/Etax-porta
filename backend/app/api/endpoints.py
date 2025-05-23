@@ -46,3 +46,8 @@ def display():
 @router.get("/download")
 def download(ma_giao_dich: str):
     return tax_service.download(driver, wait, ma_giao_dich)
+
+@router.get("/displaylisttax")
+def displaylisttax(fromdate: str = None, todate: str = None):
+    return tax_service.displaylisttax(driver, wait, fromdate, todate)
+

@@ -1,0 +1,414 @@
+{
+  "THUẾ GIÁ TRỊ GIA TĂNG": [
+    {
+      "stt": 1,
+      "ten_to_khai": "01/GTGT - Tờ khai thuế giá trị gia tăng (GTGT)",
+      "ten_viet_tat": "01/GTGT",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 2,
+      "ten_to_khai": "02/GTGT - Tờ khai thuế GTGT dành cho dự án đầu tư",
+      "ten_viet_tat": "02/GTGT",
+      "ky_ke_khai": "tháng"
+    },
+    {
+      "stt": 3,
+      "ten_to_khai": "03/GTGT - Tờ khai GTGT theo phương pháp trực tiếp",
+      "ten_viet_tat": "03/GTGT",
+      "ky_ke_khai": "quý"
+    },
+    {
+      "stt": 4,
+      "ten_to_khai": "04/GTGT - Tờ khai GTGT theo phương pháp trực tiếp trên doanh thu",
+      "ten_viet_tat": "04/GTGT",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 5,
+      "ten_to_khai": "05/GTGT - Tờ khai GTGT tạm nộp trên doanh số đối với kinh doanh ngoại tỉnh",
+      "ten_viet_tat": "05/GTGT",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 6,
+      "ten_to_khai": "01/GTGT - TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)",
+      "ten_viet_tat": "01/GTGT (TT80/2021)",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 7,
+      "ten_to_khai": "02/GTGT - TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)",
+      "ten_viet_tat": "02/GTGT (TT80/2021)",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 8,
+      "ten_to_khai": "03/GTGT - TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)",
+      "ten_viet_tat": "03/GTGT (TT80/2021)",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 9,
+      "ten_to_khai": "04/GTGT - TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)",
+      "ten_viet_tat": "04/GTGT (TT80/2021)",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 10,
+      "ten_to_khai": "05/GTGT - TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)",
+      "ten_viet_tat": "05/GTGT (TT80/2021)",
+      "ky_ke_khai": "từng lần phát sinh"
+    }
+  ],
+  "THUẾ THU NHẬP DOANH NGHIỆP": [
+    {
+      "stt": 11,
+      "ten_to_khai": "03/TNDN - Tờ khai quyết toán thuế TNDN",
+      "ten_viet_tat": "03/TNDN",
+      "ky_ke_khai": "năm"
+    },
+    {
+      "stt": 12,
+      "ten_to_khai": "01A/TNDN - Tờ khai thuế TNDN tạm tính",
+      "ten_viet_tat": "01A/TNDN",
+      "ky_ke_khai": "quý"
+    },
+    {
+      "stt": 13,
+      "ten_to_khai": "GH_TNDN_TT170 - Bảng kê gia hạn thuế TNDN theo TT170",
+      "ten_viet_tat": "GH_TNDN_TT170",
+      "ky_ke_khai": "năm"
+    },
+    {
+      "stt": 14,
+      "ten_to_khai": "GH_TNDN_TT83 - Bảng kê gia hạn thuế TNDN theo TT83/2012/TT-BTC",
+      "ten_viet_tat": "GH_TNDN_TT83",
+      "ky_ke_khai": "năm"
+    },
+    {
+      "stt": 15,
+      "ten_to_khai": "01B/TNDN - Tờ khai thuế TNDN tạm tính",
+      "ten_viet_tat": "01B/TNDN",
+      "ky_ke_khai": "quý"
+    },
+    {
+      "stt": 16,
+      "ten_to_khai": "04/TNDN - Tờ khai thuế TNDN tính theo tỷ lệ thu nhập trên doanh thu",
+      "ten_viet_tat": "04/TNDN",
+      "ky_ke_khai": "năm/từng lần phát sinh"
+    },
+    {
+      "stt": 17,
+      "ten_to_khai": "06/TNDN - Tờ khai thuế thu nhập doanh nghiệp",
+      "ten_viet_tat": "06/TNDN",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 18,
+      "ten_to_khai": "05/TNDN - Tờ khai thuế thu nhập doanh nghiệp đối với thu nhập từ chuyển nhượng vốn",
+      "ten_viet_tat": "05/TNDN",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 19,
+      "ten_to_khai": "02/TNDN - TỜ KHAI THUẾ THU NHẬP DOANH NGHIỆP",
+      "ten_viet_tat": "02/TNDN",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 20,
+      "ten_to_khai": "05/TNDN - Thuế thu nhập doanh nghiệp (TT80/2021)",
+      "ten_viet_tat": "05/TNDN (TT80/2021)",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 21,
+      "ten_to_khai": "06/TNDN - Tờ khai thuế thu nhập doanh nghiệp(TT80/2021)",
+      "ten_viet_tat": "06/TNDN (TT80/2021)",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 22,
+      "ten_to_khai": "04/TNDN - TỜ KHAI THUẾ THU NHẬP DOANH NGHIỆP (TT80/2021)",
+      "ten_viet_tat": "04/TNDN (TT80/2021)",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 23,
+      "ten_to_khai": "02/TNDN - TỜ KHAI THUẾ THU NHẬP DOANH NGHIỆP (TT80/2021)",
+      "ten_viet_tat": "02/TNDN (TT80/2021)",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 24,
+      "ten_to_khai": "03/TNDN - Tờ khai quyết toán thuế TNDN (TT80/2021)",
+      "ten_viet_tat": "03/TNDN (TT80/2021)",
+      "ky_ke_khai": "năm"
+    }
+  ],
+  "THUẾ THU NHẬP CÁ NHÂN": [
+    {
+      "stt": 25,
+      "ten_to_khai": "06/KK-TNCN - Tờ khai quyết toán thuế thu nhập cá nhân (TT156/2013)",
+      "ten_viet_tat": "06/KK-TNCN",
+      "ky_ke_khai": "năm"
+    },
+    {
+      "stt": 26,
+      "ten_to_khai": "01/KK-BHDC - Tờ khai khấu trừ thuế thu nhập cá nhân (TT156/2013)",
+      "ten_viet_tat": "01/KK-BHDC",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 27,
+      "ten_to_khai": "02TH - Bảng tổng hợp đăng ký người phụ thuộc giảm trừ gia cảnh",
+      "ten_viet_tat": "02TH",
+      "ky_ke_khai": "năm"
+    },
+    {
+      "stt": 28,
+      "ten_to_khai": "01/XS-BHDC - Tờ khai khấu trừ thuế XSHBDC (TT92/2015)",
+      "ten_viet_tat": "01/XS-BHDC",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 29,
+      "ten_to_khai": "05/DS-TNCN - Danh sách cá nhân nhận thu nhập (TT92/2015)",
+      "ten_viet_tat": "05/DS-TNCN",
+      "ky_ke_khai": "năm"
+    },
+    {
+      "stt": 30,
+      "ten_to_khai": "05/KK-TNCN - Tờ khai khấu trừ thuế thu nhập cá nhân (TT92/2015)",
+      "ten_viet_tat": "05/KK-TNCN (TT92/2015)",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 31,
+      "ten_to_khai": "05/QTT-TNCN - Tờ khai quyết toán thuế TNCN Dành cho tổ chức, cá nhân trả thu nhập chịu thuế từ tiền lương, tiền công cho cá nhân (TT92/2015)",
+      "ten_viet_tat": "05/QTT-TNCN (TT92/2015)",
+      "ky_ke_khai": "năm"
+    },
+    {
+      "stt": 32,
+      "ten_to_khai": "06/TNCN - Tờ khai khấu trừ thuế TNCN (TT92/2015)",
+      "ten_viet_tat": "06/TNCN (TT92/2015)",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 33,
+      "ten_to_khai": "05/KK-TNCN - Tờ khai quyết toán thuế thu nhập cá nhân (TT156/2013)",
+      "ten_viet_tat": "05/KK-TNCN (TT156/2013)",
+      "ky_ke_khai": "năm"
+    },
+    {
+      "stt": 34,
+      "ten_to_khai": "02/KK-BHÐC - Tờ khai quyết toán thuế thu nhập cá nhân (TT156/2013)",
+      "ten_viet_tat": "02/KK-BHÐC (TT156/2013)",
+      "ky_ke_khai": "năm"
+    },
+    {
+      "stt": 35,
+      "ten_to_khai": "02/KK-XS - Tờ khai quyết toán thuế thu nhập cá nhân (TT156/2013)",
+      "ten_viet_tat": "02/KK-XS (TT156/2013)",
+      "ky_ke_khai": "năm"
+    },
+    {
+      "stt": 36,
+      "ten_to_khai": "01/KK-XS - Tờ khai khấu trừ thuế thu nhập cá nhân (TT156/2013)",
+      "ten_viet_tat": "01/KK-XS (TT156/2013)",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 37,
+      "ten_to_khai": "02/KK-TNCN - Tờ khai khấu trừ thuế thu nhập cá nhân (TT156/2013)",
+      "ten_viet_tat": "02/KK-TNCN (TT156/2013)",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 38,
+      "ten_to_khai": "01/XSBHĐC - Tờ khai thuế thu nhập cá nhân (TT40/2021)",
+      "ten_viet_tat": "01/XSBHĐC",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 39,
+      "ten_to_khai": "03/KK-TNCN - Tờ khai khấu trừ thuế thu nhập cá nhân (TT156/2013)",
+      "ten_viet_tat": "03/KK-TNCN",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 40,
+      "ten_to_khai": "04/CNV-TNCN - Tờ khai thuế thu nhập cá nhân (TT80/2021)",
+      "ten_viet_tat": "04/CNV-TNCN (TT80/2021)",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 41,
+      "ten_to_khai": "04/ÐTV-TNCN - Tờ khai thuế thu nhập cá nhân (TT80/2021)",
+      "ten_viet_tat": "04/ÐTV-TNCN (TT80/2021)",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 42,
+      "ten_to_khai": "05/KK-TNCN - Tờ khai khấu trừ thuế thu nhập cá nhân (TT80)",
+      "ten_viet_tat": "05/KK-TNCN (TT80/2021)",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 43,
+      "ten_to_khai": "06/TNCN - Tờ khai khấu trừ thuế TNCN (TT80)",
+      "ten_viet_tat": "06/TNCN (TT80/2021)",
+      "ky_ke_khai": "tháng/quý"
+    },
+    {
+      "stt": 44,
+      "ten_to_khai": "05/QTT-TNCN - TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN (TT80/2021)",
+      "ten_viet_tat": "05/QTT-TNCN (TT80/2021)",
+      "ky_ke_khai": "năm"
+    }
+  ],
+  "THUẾ TÀI NGUYÊN": [
+    {
+      "stt": 45,
+      "ten_to_khai": "01/TAIN - Tờ khai thuế tài nguyên",
+      "ten_viet_tat": "01/TAIN",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 46,
+      "ten_to_khai": "02/TAIN - Tờ khai quyết toán thuế tài nguyên",
+      "ten_viet_tat": "02/TAIN",
+      "ky_ke_khai": "năm"
+    },
+    {
+      "stt": 47,
+      "ten_to_khai": "01/TAIN - Tờ khai thuế tài nguyên (TT80/2021)",
+      "ten_viet_tat": "01/TAIN (TT80/2021)",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 48,
+      "ten_to_khai": "02/TAIN - Tờ khai quyết toán thuế tài nguyên (TT80/2021)",
+      "ten_viet_tat": "02/TAIN (TT80/2021)",
+      "ky_ke_khai": "năm"
+    }
+  ],
+  "THUẾ TIÊU THỤ ĐẶC BIỆT": [
+    {
+      "stt": 49,
+      "ten_to_khai": "01/TTĐB - Tờ khai thuế tiêu thụ đặc biệt (TT156/2013)",
+      "ten_viet_tat": "01/TTĐB",
+      "ky_ke_khai": "từng lần phát sinh/tháng"
+    },
+    {
+      "stt": 50,
+      "ten_to_khai": "01/TTĐB - Tờ khai thuế TTĐB (TT195/2015)",
+      "ten_viet_tat": "01/TTĐB",
+      "ky_ke_khai": "từng lần phát sinh/tháng"
+    },
+    {
+      "stt": 51,
+      "ten_to_khai": "01/TTĐB - Tờ khai thuế tiêu thụ đặc biệt (TT80/2021)",
+      "ten_viet_tat": "01/TTĐB (TT80/2021)",
+      "ky_ke_khai": "từng lần phát sinh/tháng"
+    },
+    {
+      "stt": 52,
+      "ten_to_khai": "02/TTĐB - Tờ khai thuế tiêu thụ đặc biệt (TT80/2021)",
+      "ten_viet_tat": "02/TTĐB (TT80/2021)",
+      "ky_ke_khai": "từng lần phát sinh/tháng"
+    },
+    {
+      "stt": 53,
+      "ten_to_khai": "03/TTĐB - Tờ khai thuế tiêu thụ đặc biệt (TT80/2021)",
+      "ten_viet_tat": "03/TTĐB (TT80/2021)",
+      "ky_ke_khai": "từng lần phát sinh/tháng"
+    },
+    {
+      "stt": 54,
+      "ten_to_khai": "04/TTĐB - Tờ khai thuế tiêu thụ đặc biệt (TT80/2021)",
+      "ten_viet_tat": "04/TTĐB (TT80/2021)",
+      "ky_ke_khai": "từng lần phát sinh/tháng"
+    }
+  ],
+  "THUẾ BẢO VỆ MÔI TRƯỜNG": [
+    {
+      "stt": 113,
+      "ten_to_khai": "01/TBVMT - Tờ khai thuế bảo vệ môi trường",
+      "ten_viet_tat": "01/TBVMT",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 114,
+      "ten_to_khai": "01/TBVMT - Tờ khai thuế bảo vệ môi trường theo TT80",
+      "ten_viet_tat": "01/TBVMT",
+      "ky_ke_khai": "tháng"
+    }
+  ],
+  "BIÊN LAI": [
+    {
+      "stt": 145,
+      "ten_to_khai": "01/ĐK-BL - Tờ khai đăng ký sử dụng biên lai điện tử mẫu số 01/ĐK-BL",
+      "ten_viet_tat": "01/ĐK-BL",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 146,
+      "ten_to_khai": "TB01/AC - THÔNG BÁO phát hành biên lai",
+      "ten_viet_tat": "TB01/AC",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 147,
+      "ten_to_khai": "BC01/AC - BÁO CÁO về việc nhận in/cung cấp phần mềm tự in biên lai/cung cấp giải pháp biên lai điện tử",
+      "ten_viet_tat": "BC01/AC",
+      "ky_ke_khai": "kỳ"
+    },
+    {
+      "stt": 148,
+      "ten_to_khai": "BC21/AC - Báo cáo mất, cháy, hỏng biên lai",
+      "ten_viet_tat": "BC21/AC",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 149,
+      "ten_to_khai": "TB03/AC - Thông báo kết quả hủy biên lai",
+      "ten_viet_tat": "TB03/AC",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 150,
+      "ten_to_khai": "BC7/AC - Báo cáo tình hình sử dụng biên lai",
+      "ten_viet_tat": "BC7/AC",
+      "ky_ke_khai": "quý"
+    },
+    {
+      "stt": 151,
+      "ten_to_khai": "TT303/BLaiCDD - Bảng kê biên lai chưa sử dụng của cơ quan thu phí, lệ phí chuyển địa điểm khác địa bàn cơ quan thuế quản lý",
+      "ten_viet_tat": "TT303/BLaiCDD",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 152,
+      "ten_to_khai": "TT303/ThayDoiTT - Điều chỉnh thông tin tại thông báo phát hành biên lai",
+      "ten_viet_tat": "TT303/ThayDoiTT",
+      "ky_ke_khai": "từng lần phát sinh"
+    }
+  ],
+  "Miscellaneous": [
+    {
+      "stt": 227,
+      "ten_to_khai": "01/TEM - Đăng ký sử dụng tem điện tử",
+      "ten_viet_tat": "01/TEM",
+      "ky_ke_khai": "từng lần phát sinh"
+    },
+    {
+      "stt": 228,
+      "ten_to_khai": "03/TEM - Đơn đề nghị mua tem điện tử thuốc lá hoặc tem điện tử rượu sản xuất để tiêu thụ trong nước",
+      "ten_viet_tat": "03/TEM",
+      "ky_ke_khai": "từng lần phát sinh"
+    }
+  ]
+} 
