@@ -497,60 +497,7 @@ export default function TaxObligationSearch() {
         </div>
       )}
 
-      {/* Submitted Tax Declarations Table */}
-      {submittedTaxResults.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-auto shadow-sm h-[500px]">
-          <div className="p-4 bg-gray-50 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800">Danh sách tờ khai đã nộp</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-gray-700">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left font-medium text-gray-800 border-b border-gray-200 w-16">STT</th>
-                  <th className="px-6 py-4 text-left font-medium text-gray-800 border-b border-gray-200 w-48">Tên tờ khai</th>
-                  <th className="px-6 py-4 text-left font-medium text-gray-800 border-b border-gray-200 w-32">Mã</th>
-                  <th className="px-6 py-4 text-left font-medium text-gray-800 border-b border-gray-200 w-32">Kỳ kê khai</th>
-                  <th className="px-6 py-4 text-left font-medium text-gray-800 border-b border-gray-200 w-32">Hạn nộp</th>
-                  <th className="px-6 py-4 text-left font-medium text-gray-800 border-b border-gray-200 w-32">Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody>
-                {submittedTaxResults.slice(1).map((row, rowIdx) => {
-                  // Extract data from the original search results
-                  // Row structure: [STT, Mã giao dịch, Tờ khai/Phụ lục, Kỳ tính thuế, Loại tờ khai, Lần nộp, Lần bổ sung, Ngày nộp, Nơi nộp, Tiến trình giải quyết]
-                  const tenToKhai = row[2] || ""; // Tờ khai/Phụ lục
-                  const kyKeKhai = row[3] || ""; // Kỳ tính thuế
-                  const ngayNop = row[7] || ""; // Ngày nộp as Hạn nộp
-                  
-                  // Find tax code by exact name match in tokhaiArray
-                  const ma = findTaxCodeByName(tenToKhai);
-                  
-                  return (
-                    <tr
-                      key={rowIdx}
-                      className="border-b border-gray-100 hover:bg-gray-50"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap w-16">{rowIdx + 1}</td>
-                      <td className="px-6 py-4 whitespace-normal w-48">
-                        <div className="max-w-[16rem] break-words">
-                          {tenToKhai}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap w-32">{ma}</td>
-                      <td className="px-6 py-4 whitespace-nowrap w-32">{kyKeKhai}</td>
-                      <td className="px-6 py-4 whitespace-nowrap w-32">{ngayNop}</td>
-                      <td className="px-6 py-4 whitespace-nowrap w-32">
-                        <span className="text-green-600 font-medium">Hoàn thành</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+    
     </div>
   );
 }
