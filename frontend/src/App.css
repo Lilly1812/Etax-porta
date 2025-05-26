@@ -1,2 +1,7 @@
 /* src/style.css */
 @import "tailwindcss";
+.bg-dot {
+    background-color: #eaedf3;
+  background-image: radial-gradient(#1f1f1f 1px, transparent 1px);
+  background-size: 20px 20px;
+}

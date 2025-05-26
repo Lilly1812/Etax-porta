@@ -17,10 +17,10 @@ export default function Company() {
     { id: "taxId", label: "Mã số thuế", },
     { id: "name", label: "Tên công ty" },
     { id: "companystartdate", label: "Thời gian thành lập"},
+    { id: "periods", label: "Kỳ kê khai"},
     { id: "address", label: "Địa chỉ" },
     { id: "phone", label: "Điện thoại"},
     { id: "website", label: "Website"},
-    { id: "periods", label: "Giai đoạn kê khai"},
   ]);
 const [companies, setCompanies] = useState([
   {
@@ -277,15 +277,6 @@ const [companies, setCompanies] = useState([
                   <td className="px-4 py-3">
                     {company.companystartdate}
                   </td>
-                  <td  className="px-4 py-3">
-                    {company.address}
-                  </td>
-                  <td  className="px-4 py-3">
-                    {company.phone}
-                  </td>
-                  <td  className="px-4 py-3">
-                    {company.website}
-                  </td>
                   <td
                     
                     className="px-4 py-3 text-blue-600 underline cursor-pointer"
@@ -297,6 +288,16 @@ const [companies, setCompanies] = useState([
                   >
                     Chi tiết
                   </td>
+                  <td  className="px-4 py-3">
+                    {company.address}
+                  </td>
+                  <td  className="px-4 py-3">
+                    {company.phone}
+                  </td>
+                  <td  className="px-4 py-3">
+                    {company.website}
+                  </td>
+                  
                 </tr>
               ))}
             </tbody>

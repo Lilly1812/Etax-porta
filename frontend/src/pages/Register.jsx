@@ -5,9 +5,10 @@ import bgImage from "../assets/bg2.jpg";
 
 function RegisterForm() {
   const [form, setForm] = useState({
+    fullName: "",
     username: "",
-    email:"",
-    phone:"",
+    email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
   });
@@ -19,7 +20,7 @@ function RegisterForm() {
     setError("");
 
     // Basic validation
-    if (!form.username ||!form.email || !form.password || !form.confirmPassword) {
+    if (!form.fullName || !form.username || !form.email || !form.password || !form.confirmPassword) {
       setError("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
@@ -43,17 +44,22 @@ function RegisterForm() {
       return;
     }
 
-    existingUsers.push({ username: form.username, password: form.password, email:form.email, phone:form.phone });
+    existingUsers.push({
+      fullName: form.fullName,
+      username: form.username,
+      email: form.email,
+      phone: form.phone,
+      password: form.password
+    });
     localStorage.setItem("users", JSON.stringify(existingUsers));
 
     alert("Đăng ký thành công! Hãy đăng nhập.");
-    setStep("start"); // Quay lại trang login
+    setStep("start");
   };
 
   return (
     <div className="w-full h-screen ">
       <div className="flex w-full overflow-hidden">
-           
         {/* Right side - Register Form */}
         <div className="w-1/2 p-8 flex flex-col justify-center">
           <div className="flex items-center justify-center mb-4">
@@ -65,8 +71,22 @@ function RegisterForm() {
                 {error}
               </div>
             )}
+            <div className="flex justify-between gap-4">
+            <div className="space-y-2 w-1/2">
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
+                Họ và tên
+              </label>
+              <input
+                id="fullName"
+                type="text"
+                value={form.fullName}
+                onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Nhập họ và tên của bạn"
+              />
+            </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-1/2">
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Tên đăng nhập
               </label>
@@ -79,26 +99,30 @@ function RegisterForm() {
                 placeholder="Nhập tên đăng nhập"
               />
             </div>
+            </div>
+            
+
             <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email
               </label>
               <input
                 id="email"
-                type="text"
+                type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Nhập email của bạn"
               />
             </div>
+
             <div className="space-y-2">
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                 Số điện thoại
               </label>
               <input
                 id="phone"
-                type="text"
+                type="tel"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"

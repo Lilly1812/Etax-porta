@@ -5,6 +5,7 @@ import axios from "axios";
 import { FiRefreshCw, FiUser, FiLock, FiShield } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { useCompany } from "../context/CompanyContext";
+import "../App.css";
 
 function Spinner({ size = 5 }) {
   return (
@@ -103,11 +104,11 @@ const handleLoginSubmit = async (e) => {
     step === "login" ? (
       <div className="flex h-full bg-gray-50">
         {/* Left side - Login Form */}
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="w-[480px] p-8 rounded-2xl shadow-lg bg-white transition-all duration-500 hover:shadow-xl">
-            <h1 className="text-2xl font-bold text-center mb-8 text-[#1f1f1f]">
+        <div className="flex-1 flex items-center justify-center p-8 bg-dot">
+          <div className="w-[560px] p-8 rounded-2xl shadow-lg  bg-gradient-to-b from-[#ff5e5f] to-[#c6494a] transition-all duration-500 hover:shadow-xl">
+            <h1 className="text-2xl font-bold text-center mb-8 text-white">
               ĐĂNG NHẬP HỆ THỐNG
-              <div className="text-lg font-normal text-gray-500 mt-1">thuedientu.gdt.gov.vn</div>
+              <div className="text-lg font-normal text-white mt-1">thuedientu.gdt.gov.vn</div>
             </h1>
             
             {selectedCompany && (
@@ -201,7 +202,7 @@ const handleLoginSubmit = async (e) => {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300 text-[#4680ef] focus:ring-[#4680ef] transition-colors"
                 />
-                <label htmlFor="remember" className="ml-2 block text-sm text-gray-600">
+                <label htmlFor="remember" className="ml-2 block text-sm text-white">
                   Nhớ (tại máy) thông tin đăng nhập cho lần sau
                 </label>
               </div>
@@ -217,7 +218,7 @@ const handleLoginSubmit = async (e) => {
                          transition-all duration-300 ease-in-out
                          transform hover:-translate-y-0.5 active:translate-y-0
                          disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0
-                         flex justify-center items-center gap-2 shadow-lg shadow-blue-100"
+                         flex justify-center items-center gap-2 shadow-lg shadow"
                 disabled={loadingLogin}
               >
                 {loadingLogin ? <Spinner /> : "Đăng nhập"}
