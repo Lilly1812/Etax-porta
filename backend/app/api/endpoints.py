@@ -1,12 +1,29 @@
-from fastapi import APIRouter, HTTPException, Form
+from fastapi import APIRouter, HTTPException, Form , Request
 from app.utils.selenium_utils import create_driver
 from app.services import tax_service
 from app.utils.url_manager import URLStateManager
+from app.db.oracle import get_connection
 
 router = APIRouter()
 
 driver, wait = create_driver()
 url_manager = URLStateManager()
+
+@router.post("/api/login")
+async def login(request: Request):
+    data = await request.json()
+    username = data.get("username")
+    password = data.get("password")
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM E_TAX.users WHERE username=:1 AND password=:2", (username, password))
+    user = cur.fetchone()
+    cur.close()
+    conn.close()
+    if user:
+        return {"success": True, "user": username}
+    else:
+        raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không đúng.")
 
 @router.get("/check-session")
 def check_session_status():

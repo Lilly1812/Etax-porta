@@ -2,21 +2,6 @@ import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.png";
 import bgImage from "../assets/bg2.jpg";
-// Mock user data
-const MOCK_USERS = [
-  {
-    username: "MinhBT11",
-    password: "123456",
-  },
-  {
-    username: "admin",
-    password: "admin123",
-  },
-  {
-    username: "0109798789-ql",
-    password: "tct@123",
-  },
-];
 
 function StartLogin() {
   const [form, setForm] = useState({
@@ -27,44 +12,32 @@ function StartLogin() {
   const [error, setError] = useState("");
   const { setStep  } = useAuth();
 
-  // Kiểm tra đăng nhập với cả mock và localStorage
-  const validateLogin = (username, password) => {
-    // Kiểm tra localStorage
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    if (users.find((u) => u.username === username && u.password === password)) {
-      return true;
-    }
-    // Kiểm tra mock
-    const user = MOCK_USERS.find(
-      (user) => user.username === username && user.password === password
-    );
-    return user !== undefined;
-  };
   const handleRegister = (e) => {
     setStep("register");
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-
-    // Basic validation
+    setError('');
     if (!form.username || !form.password) {
-      setError("Vui lòng nhập đầy đủ thông tin đăng nhập.");
+      setError('Vui lòng nhập đầy đủ thông tin đăng nhập.');
       return;
     }
-
-    // Check credentials against mock data and localStorage
-    if (validateLogin(form.username, form.password)) {
-      // Store in localStorage if remember me is checked
-      if (form.rememberMe) {
-        localStorage.setItem("rememberedUser", form.username);
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: form.username, password: form.password })
+      });
+      if (res.ok) {
+        // Đăng nhập thành công
+        setStep("search");
       } else {
-        localStorage.removeItem("rememberedUser");
+        const data = await res.json();
+        setError(data.detail || 'Tên đăng nhập hoặc mật khẩu không đúng.');
       }
-      setStep("search");
-    } else {
-      setError("Tên đăng nhập hoặc mật khẩu không đúng.");
+    } catch (err) {
+      setError('Lỗi kết nối máy chủ.');
     }
   };
 
