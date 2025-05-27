@@ -10,20 +10,22 @@ driver, wait = create_driver()
 url_manager = URLStateManager()
 
 @router.post("/api/login")
-async def login(request: Request):
+async def app_login(request: Request):
     data = await request.json()
     username = data.get("username")
     password = data.get("password")
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM E_TAX.users WHERE username=:1 AND password=:2", (username, password))
-    user = cur.fetchone()
-    cur.close()
-    conn.close()
-    if user:
-        return {"success": True, "user": username}
-    else:
-        raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không đúng.")
+    try:
+        cur.execute("SELECT * FROM E_TAX.users WHERE username=:1 AND password=:2", (username, password))
+        user = cur.fetchone()
+        if user:
+            return {"success": True, "user": username}
+        else:
+            raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không đúng.")
+    finally:
+        cur.close()
+        conn.close()
 
 @router.get("/api/companies")
 def get_companies():
@@ -78,8 +80,8 @@ def refresh():
 def refresh_captcha():
     return tax_service.refresh_captcha(driver, wait)
 
-@router.post("/login")
-def login(username: str = Form(...), password: str = Form(...), captcha_code: str = Form(...)):
+@router.post("/api/tax/login")
+def tax_login(username: str = Form(...), password: str = Form(...), captcha_code: str = Form(...)):
     return tax_service.login(driver, wait, username, password, captcha_code)
 
 @router.post("/search")

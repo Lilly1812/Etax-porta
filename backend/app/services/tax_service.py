@@ -195,26 +195,50 @@ def login(driver, wait, username, password, captcha_code):
                         }
                     )
             
+            # Wait for the page to load after login
+            time.sleep(5)
+            screenshot_path = "login_success.png"
+            driver.save_screenshot(screenshot_path)
+            print(f"[INFO] Screenshot saved to {screenshot_path}")
             try:
-                menu = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "li.li-3")))
-                menu.click()
+                # Try to find and click the menu using JavaScript
+                menu_script = """
+                    var menu = document.querySelector('li.li-3');
+                    if (menu) {
+                        menu.click();
+                        return true;
+                    }
+                    return false;
+                """
+                menu_clicked = driver.execute_script(menu_script)
+                if not menu_clicked:
+                    raise Exception("Could not find menu element")
+                
                 time.sleep(2)
                 
-                search_menu = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "li[onclick*='traCuuToKhaiProc']")))
-                search_menu.click()
-                time.sleep(2)
+                # Try to find and click the search menu using JavaScript
+                search_script = """
+                    var searchMenu = document.querySelector('li[onclick*="traCuuToKhaiProc"]');
+                    if (searchMenu) {
+                        searchMenu.click();
+                        return true;
+                    }
+                    return false;
+                """
+                search_clicked = driver.execute_script(search_script)
+                if not search_clicked:
+                    raise Exception("Could not find search menu element")
                 
+                time.sleep(2)
                 return {"message": "Login successful"}
                 
             except Exception as nav_error:
                 print(f"[ERROR] Navigation error: {str(nav_error)}")
-                raise HTTPException(
-                    status_code=500,
-                    detail={
-                        "message": "Đăng nhập thành công nhưng không thể chuyển trang",
-                        "refresh_captcha": False
-                    }
-                )
+                # If navigation fails but login was successful, return success anyway
+                return {
+                    "message": "Đăng nhập thành công",
+                    "warning": "Không thể tự động chuyển trang, vui lòng chọn menu thủ công"
+                }
                 
         except NoSuchElementException as e:
             print(f"[ERROR] Element not found: {str(e)}")
@@ -360,6 +384,7 @@ def display(driver, wait):
             rows = table.find_elements(By.TAG_NAME, "tr")
             data = []
             skip_indices = set()
+            
             for i, row in enumerate(rows):
                 headers = row.find_elements(By.TAG_NAME, "th")
                 if headers:
@@ -376,7 +401,26 @@ def display(driver, wait):
                     for idx, col in enumerate(cols):
                         if idx in skip_indices:
                             continue
+                            
                         cell_text = col.text.strip()
+                        # If this is the column with the download link
+                        if "Tờ khai/Phụ lục" in (data[0][len(row_data)] if data and data[0] else ""):
+                            try:
+                                # Try to find the download link and extract maGiaoDich
+                                link = col.find_element(By.TAG_NAME, "a")
+                                onclick = link.get_attribute("onclick")
+                                if onclick and "downloadBke" in onclick:
+                                    # Extract maGiaoDich from downloadBke('number')
+                                    match = re.search(r"downloadBke\('(\d+)'\)", onclick)
+                                    if match:
+                                        ma_giao_dich = match.group(1)
+                                        # Add maGiaoDich to the appropriate column if it doesn't exist
+                                        ma_giao_dich_idx = data[0].index("Mã giao dịch") if "Mã giao dịch" in data[0] else -1
+                                        if ma_giao_dich_idx >= 0 and len(row_data) > ma_giao_dich_idx and not row_data[ma_giao_dich_idx]:
+                                            row_data[ma_giao_dich_idx] = ma_giao_dich
+                            except Exception as e:
+                                print(f"Error extracting maGiaoDich: {e}")
+                                
                         row_data.append(cell_text)
                     data.append(row_data)
             if len(data) <= 1:
@@ -434,6 +478,38 @@ def download(driver, wait, ma_giao_dich):
                 raise ValueError("Could not find session_id or processor_id")
         except Exception:
             raise HTTPException(status_code=401, detail="Session expired or invalid")
+
+        # Determine the download type
+        download_type = "downTkhai"  # default
+        try:
+            table = wait.until(EC.presence_of_element_located((By.ID, "data_content_onday")))
+            rows = table.find_elements(By.TAG_NAME, "tr")
+            
+            for row in rows:
+                cols = row.find_elements(By.TAG_NAME, "td")
+                for col in cols:
+                    links = col.find_elements(By.TAG_NAME, "a")
+                    for link in links:
+                        onclick = link.get_attribute("onclick")
+                        if onclick:
+                            if "downloadBke" in onclick:
+                                match = re.search(r"downloadBke\('(\d+)'\)", onclick)
+                                if match and match.group(1) == ma_giao_dich:
+                                    download_type = "downBke"
+                                    break
+                            elif "downloadTkhai" in onclick:
+                                match = re.search(r"downloadTkhai\('(\d+)'\)", onclick)
+                                if match and match.group(1) == ma_giao_dich:
+                                    download_type = "downTkhai"
+                                    break
+                    if download_type != "downTkhai":  # if we found a match
+                        break
+                if download_type != "downTkhai":  # if we found a match
+                    break
+        except Exception as e:
+            print(f"Error determining download type: {e}")
+            # Keep default download_type as "downTkhai"
+
         cookies = {cookie['name']: cookie['value'] for cookie in driver.get_cookies()}
         download_url = (
             f"https://thuedientu.gdt.gov.vn/etaxnnt/Request"
@@ -443,7 +519,7 @@ def download(driver, wait, ma_giao_dich):
             f"&dse_pageId={page_id}"
             f"&dse_processorState=viewTraCuuTkhai"
             f"&dse_processorId={processor_id}"
-            f"&dse_nextEventName=downTkhai"
+            f"&dse_nextEventName={download_type}"
             f"&messageId={ma_giao_dich}"
         )
         headers = {
@@ -465,8 +541,15 @@ def download(driver, wait, ma_giao_dich):
             )
             if response.status_code == 200:
                 temp_file = BytesIO(response.content)
-                content_type = response.headers.get('Content-Type', 'application/xml')
-                filename = f"ETAX{ma_giao_dich}.xml"
+                # Set content type based on download type
+                if download_type == "downBke":
+                    content_type = "application/vnd.ms-excel.sheet.macroEnabled.12"
+                else:
+                    content_type = response.headers.get('Content-Type', 'application/xml')
+                
+                # Use .xlsx extension for downloadBke type
+                file_extension = ".xlsx" if download_type == "downBke" else ".xml"
+                filename = f"ETAX{ma_giao_dich}{file_extension}"
                 return StreamingResponse(
                     temp_file,
                     media_type=content_type,

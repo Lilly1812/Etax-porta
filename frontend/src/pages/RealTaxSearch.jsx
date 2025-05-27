@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FiSearch, FiFileText } from "react-icons/fi";
 import { toast } from 'react-toastify';
@@ -22,6 +22,28 @@ export default function RealTaxSearch() {
   const [tableData, setTableData] = useState([]);
   const [selectedTaxType, setSelectedTaxType] = useState("00");
   const [transactionCode, setTransactionCode] = useState("");
+
+  // Set default dates on mount
+  useEffect(() => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const startOfYear = new Date(currentYear, 0, 1);
+
+    const formatDateForInput = (date) => date.toISOString().split('T')[0];
+
+    setDates({
+      from: formatDateForInput(startOfYear),
+      to: formatDateForInput(today)
+    });
+  }, []);
+
+  // Run search when dates are set (on first load)
+  useEffect(() => {
+    if (dates.from && dates.to) {
+      handleSearch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dates.from, dates.to]);
 
   const handleSearch = async () => {
     setLoadingSearch(true);
