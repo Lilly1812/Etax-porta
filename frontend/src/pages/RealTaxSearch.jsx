@@ -22,6 +22,106 @@ export default function RealTaxSearch() {
   const [tableData, setTableData] = useState([]);
   const [selectedTaxType, setSelectedTaxType] = useState("00");
   const [transactionCode, setTransactionCode] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [categoryCounts, setCategoryCounts] = useState({
+    all: 0,
+    gtgt: 0,
+    tncn: 0,
+    other: 0
+  });
+  const [filteredTableData, setFilteredTableData] = useState([]);
+
+  // Function to determine tax category from declaration name
+  const getTaxCategory = (declarationName) => {
+    if (!declarationName) return "other";
+    const name = declarationName.toLowerCase();
+    if (name.includes("gtgt") || name.includes("giá trị gia tăng")) {
+      return "gtgt";
+    } else if (name.includes("tncn") || name.includes("thu nhập cá nhân")) {
+      return "tncn";
+    }
+    return "other";
+  };
+
+  // Update category counts when table data changes
+  useEffect(() => {
+    if (tableData.length > 1) {
+      const counts = {
+        all: tableData.length - 1, // Subtract header row
+        gtgt: 0,
+        tncn: 0,
+        other: 0
+      };
+
+      // Find the index of the declaration name column
+      const declarationNameIndex = tableData[0].findIndex(header => 
+        header === "Tờ khai/Phụ lục" || header === "Tên tờ khai"
+      );
+
+      if (declarationNameIndex !== -1) {
+        tableData.slice(1).forEach(row => {
+          const category = getTaxCategory(row[declarationNameIndex]);
+          counts[category]++;
+        });
+      }
+
+      setCategoryCounts(counts);
+    }
+  }, [tableData]);
+
+  // Update filtered data when table data or active category changes
+  useEffect(() => {
+    if (tableData.length > 1) {
+      if (activeCategory === "all") {
+        setFilteredTableData(tableData);
+      } else {
+        const declarationNameIndex = tableData[0].findIndex(header => 
+          header === "Tờ khai/Phụ lục" || header === "Tên tờ khai"
+        );
+
+        if (declarationNameIndex !== -1) {
+          const filtered = [
+            tableData[0], // Keep header row
+            ...tableData.slice(1).filter(row => 
+              getTaxCategory(row[declarationNameIndex]) === activeCategory
+            )
+          ];
+          setFilteredTableData(filtered);
+        } else {
+          setFilteredTableData(tableData);
+        }
+      }
+    }
+  }, [tableData, activeCategory]);
+
+  const taxCategories = [
+    { id: "all", label: "Tất cả" },
+    { id: "gtgt", label: "Thuế GTGT" },
+    { id: "tncn", label: "Thuế TNCN" },
+    { id: "other", label: "Khác" }
+  ];
+
+  const handleCategoryClick = (categoryId) => {
+    setActiveCategory(categoryId);
+    if (categoryId === "all") {
+      setSelectedTaxType("00");
+    } else {
+      const declarationNameIndex = tableData[0].findIndex(header => 
+        header === "Tờ khai/Phụ lục" || header === "Tên tờ khai"
+      );
+
+      if (declarationNameIndex !== -1) {
+        const matchingRow = tableData.slice(1).find(row => 
+          getTaxCategory(row[declarationNameIndex]) === categoryId
+        );
+
+        if (matchingRow) {
+          const taxType = matchingRow[declarationNameIndex].split(" - ")[0].trim();
+          setSelectedTaxType(taxType);
+        }
+      }
+    }
+  };
 
   // Set default dates on mount
   useEffect(() => {
@@ -91,6 +191,7 @@ export default function RealTaxSearch() {
         <FiFileText size={26} className="text-green-700 mr-2" />
         <span className="text-lg font-semibold tracking-wide">TRA CỨU TỜ KHAI THUẾ</span>
       </div>
+
       {/* Filter row */}
       <div className="flex flex-wrap items-end gap-4 mb-4">
         {/* Thời gian */}
@@ -190,13 +291,37 @@ export default function RealTaxSearch() {
           )}
         </button>
       </div>
+      
+      {/* Navigation Bar */}
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+        {taxCategories.map((category) => (
+          <button
+            key={category.id}
+            onClick={() => handleCategoryClick(category.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex items-center
+              ${activeCategory === category.id 
+                ? 'bg-green-600 text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            {category.label}
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+              activeCategory === category.id 
+                ? 'bg-white/20 text-white' 
+                : 'bg-gray-200 text-gray-700'
+            }`}>
+              {categoryCounts[category.id]}
+            </span>
+          </button>
+        ))}
+      </div>
+
       {/* Table */}
       <div className="bg-white border border-gray-400 rounded-lg overflow-x-auto">
-        {tableData.length > 0 ? (
+        {filteredTableData.length > 0 ? (
           <table className="w-full text-sm text-gray-700">
             <thead className="bg-gray-50">
               <tr>
-                {tableData[0].map((header, idx) => (
+                {filteredTableData[0].map((header, idx) => (
                   <th
                     key={idx}
                     className={
@@ -209,13 +334,15 @@ export default function RealTaxSearch() {
               </tr>
             </thead>
             <tbody>
-              {tableData.slice(1).map((row, rowIndex) => {
+              {filteredTableData.slice(1).map((row, rowIndex) => {
                 return (
                   <tr key={rowIndex} className="border-b border-gray-400 hover:bg-gray-50">
                     {row.map((cell, cellIndex) => {
-                      const isTenToKhai = tableData[0][cellIndex] === 'Tờ khai/Phụ lục';
-                      const maGiaoDichIndex = tableData[0].findIndex(h => h === 'Mã giao dịch');
+                      const isTenToKhai = filteredTableData[0][cellIndex] === 'Tờ khai/Phụ lục' || 
+                                        filteredTableData[0][cellIndex] === 'Tên tờ khai';
+                      const maGiaoDichIndex = filteredTableData[0].findIndex(h => h === 'Mã giao dịch');
                       const maGiaoDich = row[maGiaoDichIndex];
+                      
                       if (isTenToKhai && maGiaoDich) {
                         return (
                           <td key={cellIndex} className="px-4 py-3 w-32 break-words">
@@ -225,6 +352,10 @@ export default function RealTaxSearch() {
                               target="_blank"
                               rel="noopener noreferrer"
                               title="Tải tệp tờ khai về"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                window.open(`http://localhost:8000/download?ma_giao_dich=${maGiaoDich}`, '_blank');
+                              }}
                             >
                               {cell}
                             </a>
@@ -234,7 +365,7 @@ export default function RealTaxSearch() {
                       return (
                         <td
                           key={cellIndex}
-                          className={`px-4 py-3 break-words ${tableData[0][cellIndex] === 'Tên tờ khai' ? 'w-32' : ''}`}
+                          className={`px-4 py-3 break-words ${filteredTableData[0][cellIndex] === 'Tên tờ khai' ? 'w-32' : ''}`}
                         >
                           {cell}
                         </td>
