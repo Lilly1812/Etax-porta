@@ -25,6 +25,36 @@ async def login(request: Request):
     else:
         raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không đúng.")
 
+@router.get("/api/companies")
+def get_companies():
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            SELECT 
+                TAX_CODE, COMPANY_NAME, ADDRESS, PHONE, WEBSITE, DECLARE_TYPE, ESTABLISHED_DATE, YEAR_START, YEAR_END
+            FROM 
+                E_TAX.companies
+        """)
+        rows = cur.fetchall()
+        companies = []
+        for row in rows:
+            companies.append({
+                "TAX_CODE": row[0],
+                "COMPANY_NAME": row[1],
+                "ADDRESS": row[2],
+                "PHONE": row[3],
+                "WEBSITE": row[4],
+                "DECLARE_TYPE": row[5],
+                "ESTABLISHED_DATE": row[6],
+                "YEAR_START": row[7],
+                "YEAR_END": row[8],
+            })
+        return companies
+    finally:
+        cur.close()
+        conn.close()
+
 @router.get("/check-session")
 def check_session_status():
     is_valid = tax_service.check_session(driver)

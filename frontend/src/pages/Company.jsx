@@ -3,6 +3,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiRefreshCw } from "react-icons/fi";
 import { useCompany } from "../context/CompanyContext";
 import { useAuth } from "../context/AuthContext";
 import CompanyFormSheet from "../components/CompanyFormSheet";
+import axios from "axios";
 
 export default function Company() {
   const { selectedCompany, setSelectedCompany } = useCompany();
@@ -12,6 +13,7 @@ export default function Company() {
   const [selectedCompanies, setSelectedCompanies] = useState([]);
   const [openPeriodModal, setOpenPeriodModal] = useState(false);
   const [selectedCompanyPeriods, setSelectedCompanyPeriods] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [columns, setColumns] = useState([
     { id: "checkbox", width: 60 },
     { id: "taxId", label: "Mã số thuế", },
@@ -22,130 +24,36 @@ export default function Company() {
     { id: "phone", label: "Điện thoại"},
     { id: "website", label: "Website"},
   ]);
-const [companies, setCompanies] = useState([
-  {
-    taxId: "0110898594",
-    name: "CÔNG TY TNHH DỊCH VỤ VÀ ĐÀO TẠO LÀM ĐẸP ĐÀO HƯƠNG QUỲNH",
-    companystartdate: "2002-06-15",
-    address: "123 Đường Láng, Đống Đa, Hà Nội",
-    email: "contact@daohuongquynh.com",
-    phone: "0987654321",
-    website: "www.daohuongquynh.com",
-    periods: [{ type: "theo_nam", startYear: "2022", endYear: "2024" }],
-  },
-  {
-    taxId: "0318712400",
-    name: "CÔNG TY TNHH BEEMORE",
-    companystartdate: "2000-03-22",
-    address: "456 Lê Văn Lương, Thanh Xuân, Hà Nội",
-    email: "info@beemore.vn",
-    phone: "0123456789",
-    website: "www.beemore.vn",
-    periods: [{ type: "theo_quy", startYear: "2002", endYear: "2020" }],
-  },
-  {
-    taxId: "0101245789",
-    name: "CÔNG TY CỔ PHẦN CÔNG NGHỆ GREENDEV",
-    companystartdate: "2010-09-10",
-    address: "22 Nguyễn Chí Thanh, Ba Đình, Hà Nội",
-    email: "contact@greendev.vn",
-    phone: "0912345678",
-    website: "www.greendev.vn",
-    periods: [{ type: "theo_nam", startYear: "2015", endYear: "2024" }],
-  },
-  {
-    taxId: "0401029384",
-    name: "CÔNG TY TNHH XÂY DỰNG HOÀNG LONG",
-    companystartdate: "2015-01-05",
-    address: "99 Trường Chinh, Cẩm Lệ, Đà Nẵng",
-    email: "support@hoanglongbuild.com",
-    phone: "0909876543",
-    website: "www.hoanglongbuild.com",
-    periods: [{ type: "theo_quy", startYear: "2016", endYear: "2023" }],
-  },
-  {
-    taxId: "0201234567",
-    name: "CÔNG TY TNHH SẢN XUẤT NỘI THẤT AN GIA",
-    companystartdate: "2018-04-25",
-    address: "11 Nguyễn Hữu Cảnh, Quận Bình Thạnh, TP.HCM",
-    email: "contact@noithatangia.vn",
-    phone: "0938123123",
-    website: "www.noithatangia.vn",
-    periods: [{ type: "theo_nam", startYear: "2018", endYear: "2025" }],
-  },
-  {
-    taxId: "0312233445",
-    name: "CÔNG TY TNHH GIẢI PHÁP PHẦN MỀM VIỆT",
-    companystartdate: "2013-08-18",
-    address: "55 Lý Thường Kiệt, Quận 10, TP.HCM",
-    email: "info@giaiphapphanmemviet.com",
-    phone: "0979777888",
-    website: "www.giaiphapphanmemviet.com",
-    periods: [{ type: "theo_quy", startYear: "2013", endYear: "2024" }],
-  },
-  {
-    taxId: "0105566778",
-    name: "CÔNG TY TNHH DỊCH VỤ TÀI CHÍNH FINSERV",
-    companystartdate: "2012-11-30",
-    address: "144 Lạc Long Quân, Tây Hồ, Hà Nội",
-    email: "contact@finserv.vn",
-    phone: "0944555666",
-    website: "www.finserv.vn",
-    periods: [{ type: "theo_nam", startYear: "2012", endYear: "2023" }],
-  },
-  {
-    taxId: "0809988776",
-    name: "CÔNG TY TNHH VẬN TẢI TOÀN CẦU",
-    companystartdate: "2014-07-12",
-    address: "222 Hai Bà Trưng, Quận 1, TP.HCM",
-    email: "vanphong@toancau.com",
-    phone: "0911999888",
-    website: "www.toancaulogistics.vn",
-    periods: [{ type: "theo_quy", startYear: "2015", endYear: "2024" }],
-  },
-  {
-    taxId: "0506677889",
-    name: "CÔNG TY TNHH TRUYỀN THÔNG MEDIAZ",
-    companystartdate: "2017-02-28",
-    address: "5 Hoàng Quốc Việt, Cầu Giấy, Hà Nội",
-    email: "hello@mediaz.vn",
-    phone: "0988888999",
-    website: "www.mediaz.vn",
-    periods: [{ type: "theo_nam", startYear: "2017", endYear: "2023" }],
-  },
-  {
-    taxId: "0704455667",
-    name: "CÔNG TY TNHH ĐẦU TƯ THƯƠNG MẠI MEGABIZ",
-    companystartdate: "2016-12-01",
-    address: "777 Phạm Văn Đồng, Thủ Đức, TP.HCM",
-    email: "megabiz@megabiz.vn",
-    phone: "0909090009",
-    website: "www.megabiz.vn",
-    periods: [{ type: "theo_nam", startYear: "2016", endYear: "2024" }],
-  },
-  {
-    taxId: "0603344556",
-    name: "CÔNG TY TNHH SÁNG TẠO TECHLAB",
-    companystartdate: "2020-05-17",
-    address: "8 Tô Hiệu, Hà Đông, Hà Nội",
-    email: "info@techlab.vn",
-    phone: "0933444555",
-    website: "www.techlab.vn",
-    periods: [{ type: "theo_quy", startYear: "2020", endYear: "2025" }],
-  },
-  {
-    taxId: "0902233445",
-    name: "CÔNG TY CỔ PHẦN PHÁT TRIỂN GIÁO DỤC NEXTGEN",
-    companystartdate: "2011-10-03",
-    address: "18 Nguyễn Trãi, Thanh Xuân, Hà Nội",
-    email: "contact@nextgen.edu.vn",
-    phone: "0966123456",
-    website: "www.nextgen.edu.vn",
-    periods: [{ type: "theo_nam", startYear: "2011", endYear: "2024" }],
-  },
-]);
-
-
+  
+  // useEffect(() => {
+  //   // Gọi API lấy danh sách công ty
+  //   axios.get("http://localhost:8000/api/companies")
+  //     .then(res => setCompanies(res.data))
+  //     .catch(err => {
+  //       console.error("Lỗi khi lấy danh sách công ty:", err);
+  //       setCompanies([]);
+  //     });
+  // }, []);
+  useEffect(() => {
+  axios.get("http://localhost:8000/api/companies")
+    .then(res => {
+      // Map lại tên trường cho đúng với frontend
+      const mapped = res.data.map(item => ({
+        taxId: item.TAX_CODE || item.taxId,
+        name: item.COMPANY_NAME || item.name,
+        companystartdate: item.ESTABLISHED_DATE || item.companystartdate,
+        address: item.ADDRESS || item.address,
+        phone: item.PHONE || item.phone,
+        website: item.WEBSITE || item.website,
+        periods: item.PERIODS || item.periods || [],
+      }));
+      setCompanies(mapped);
+    })
+    .catch(err => {
+      console.error("Lỗi khi lấy danh sách công ty:", err);
+      setCompanies([]);
+    });
+}, []);
 
   const tableRef = useRef(null);
 
@@ -275,7 +183,9 @@ const [companies, setCompanies] = useState([
                     {company.name}
                   </td>
                   <td className="px-4 py-3">
-                    {company.companystartdate}
+                    {company.companystartdate
+                      ? company.companystartdate.slice(0, 10)
+                      : ""}
                   </td>
                   <td
                     
