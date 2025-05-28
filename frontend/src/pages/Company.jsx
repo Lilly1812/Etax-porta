@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { FiPlus, FiEdit2, FiTrash2, FiRefreshCw } from "react-icons/fi";
 import { useCompany } from "../context/CompanyContext";
 import { useAuth } from "../context/AuthContext";
-import CompanyFormSheet from "../components/CompanyFormSheet";
+import CompanyFormAdd from "../components/CompanyFormAdd";
+import CompanyFormEdit from "../components/CompanyFromEdit";
 import axios from "axios";
 
 export default function Company() {
@@ -14,6 +15,7 @@ export default function Company() {
   const [openPeriodModal, setOpenPeriodModal] = useState(false);
   const [selectedCompanyPeriods, setSelectedCompanyPeriods] = useState([]);
   const [companies, setCompanies] = useState([]);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [columns, setColumns] = useState([
     { id: "checkbox", width: 60 },
     { id: "taxId", label: "Mã số thuế", },
@@ -25,17 +27,9 @@ export default function Company() {
     { id: "website", label: "Website"},
   ]);
   
-  // useEffect(() => {
-  //   // Gọi API lấy danh sách công ty
-  //   axios.get("http://localhost:8000/api/companies")
-  //     .then(res => setCompanies(res.data))
-  //     .catch(err => {
-  //       console.error("Lỗi khi lấy danh sách công ty:", err);
-  //       setCompanies([]);
-  //     });
-  // }, []);
+  // Lấy danh sách công ty từ API
   useEffect(() => {
-  axios.get("http://localhost:8000/api/companies")
+  axios.get("/api/companies")
     .then(res => {
       // Map lại tên trường cho đúng với frontend
       const mapped = res.data.map(item => ({
@@ -45,7 +39,7 @@ export default function Company() {
         address: item.ADDRESS || item.address,
         phone: item.PHONE || item.phone,
         website: item.WEBSITE || item.website,
-        periods: item.PERIODS || item.periods || [],
+        // periods: item.PERIODS || item.periods || [],
       }));
       setCompanies(mapped);
     })
@@ -55,6 +49,124 @@ export default function Company() {
     });
 }, []);
 
+// Thêm công ty
+// const handleAddCompany = async (newCompany) => {
+//   try {
+//     console.log(newCompany);
+//     await axios.post("/api/companies", newCompany);
+//     // Sau khi thêm, reload lại danh sách
+//     const res = await axios.get("/api/companies");
+//     setCompanies(res.data.map(item => ({
+//       taxId: item.TAX_CODE || item.taxId,
+//       name: item.COMPANY_NAME || item.name,
+//       companystartdate: item.ESTABLISHED_DATE || item.companystartdate,
+//       address: item.ADDRESS || item.address,
+//       phone: item.PHONE || item.phone,
+//       website: item.WEBSITE || item.website,
+//       periods: item.PERIODS || item.periods || [],
+//     })));
+//     setIsFormOpen(false); // Đóng form
+//   } catch (err) {
+//     alert("Lỗi khi thêm công tyabc: " + (err.response?.data?.detail || err.message));
+//     console.error("Lỗi khi thêm công tybde:", err);
+//   }
+// };
+const handleAddCompany = async (newCompany) => {
+  try {
+    // Chỉ gửi đúng các trường backend cần
+    const payload = {
+      taxId: newCompany.taxId,
+      name: newCompany.name,
+      companystartdate: newCompany.companystartdate,
+      address: newCompany.address,
+      phone: newCompany.phone,
+      website: newCompany.website,
+    };
+    console.log("Payload gửi lên:", payload);
+    await axios.post("/api/companies", payload);
+    const res = await axios.get("/api/companies");
+    setCompanies(res.data.map(item => ({
+      taxId: item.TAX_CODE || item.taxId,
+      name: item.COMPANY_NAME || item.name,
+      companystartdate: item.ESTABLISHED_DATE || item.companystartdate,
+      address: item.ADDRESS || item.address,
+      phone: item.PHONE || item.phone,
+      website: item.WEBSITE || item.website,
+      periods: item.PERIODS || item.periods || [],
+    })));
+    setIsFormOpen(false);
+  } catch (err) {
+    alert("Lỗi khi thêm công ty: " + (err.response?.data?.detail || err.message));
+    console.error("Lỗi khi thêm công ty:", err);
+  }
+};
+const handleEditClick = () => {
+  if (selectedCompanies.length !== 1) {
+    alert("Vui lòng chọn 1 công ty để sửa!");
+    return;
+  }
+  const company = companies.find(c => c.taxId === selectedCompanies[0]);
+  setSelectedCompany(company);
+  setIsEditOpen(true);
+};
+// Sửa công ty
+const handleEditCompany = async (taxId, updatedCompany) => {
+  try {
+    await axios.put(`/api/companies/${taxId}`, updatedCompany);
+    // Sau khi sửa, reload lại danh sách
+    const res = await axios.get("/api/companies");
+    setCompanies(res.data.map(item => ({
+      taxId: item.TAX_CODE || item.taxId,
+      name: item.COMPANY_NAME || item.name,
+      companystartdate: item.ESTABLISHED_DATE || item.companystartdate,
+      address: item.ADDRESS || item.address,
+      phone: item.PHONE || item.phone,
+      website: item.WEBSITE || item.website,
+      periods: item.PERIODS || item.periods || [],
+    })));
+  } catch (err) {
+    alert("Lỗi khi sửa công ty: " + (err.response?.data?.detail || err.message));
+    console.error("Lỗi khi sửa công ty:", err);
+  }
+};
+
+// Xoá công ty
+const handleDeleteCompany = async (taxId) => {
+  try {
+    await axios.delete(`/api/companies/${taxId}`);
+    // Sau khi xoá, reload lại danh sách
+    const res = await axios.get("/api/companies");
+    setCompanies(res.data.map(item => ({
+      taxId: item.TAX_CODE || item.taxId,
+      name: item.COMPANY_NAME || item.name,
+      companystartdate: item.ESTABLISHED_DATE || item.companystartdate,
+      address: item.ADDRESS || item.address,
+      phone: item.PHONE || item.phone,
+      website: item.WEBSITE || item.website,
+      periods: item.PERIODS || item.periods || [],
+    })));
+  } catch (err) {
+    console.error("Lỗi khi xoá công ty:", err);
+  }
+};
+
+const handleDeleteClick = async () => {
+  if (selectedCompanies.length === 0) {
+    alert("Vui lòng chọn ít nhất 1 công ty để xoá!");
+    return;
+  }
+  if (window.confirm("Bạn có chắc chắn muốn xoá các công ty đã chọn không?")) {
+    try {
+      // Xoá từng công ty theo taxId
+      for (const taxId of selectedCompanies) {
+        await handleDeleteCompany(taxId);
+      }
+      setSelectedCompanies([]);
+    } catch (err) {
+      alert("Lỗi khi xoá công ty!");
+    }
+  }
+};
   const tableRef = useRef(null);
 
   const handleDoubleClick = (company) => {
@@ -62,9 +174,9 @@ export default function Company() {
     handleCompanyChange(company.taxId);
   };
 
-  const handleAddCompany = (newCompany) => {
-    setCompanies((prevCompanies) => [...prevCompanies, newCompany]);
-  };
+  // const handleAddCompany = (newCompany) => {
+  //   setCompanies((prevCompanies) => [...prevCompanies, newCompany]);
+  // };
 
   const handleCheckboxChange = (taxId) => {
     setSelectedCompanies((prev) => {
@@ -100,23 +212,31 @@ export default function Company() {
           >
             <FiPlus /> Thêm
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-[#ffaf24] text-white rounded-3xl hover:bg-amber-700">
+          <button className="flex items-center gap-2 px-4 py-2 bg-[#ffaf24] text-white rounded-3xl hover:bg-amber-700"
+          onClick={handleEditClick}
+          >
             <FiEdit2 /> Sửa
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-3xl hover:bg-red-700">
+          <button className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-3xl hover:bg-red-700"
+            onClick={handleDeleteClick}>
             <FiTrash2 /> Xóa
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-3xl hover:bg-green-700 ">
-            <FiRefreshCw /> Làm mới
-          </button>
+          </button> 
         </div>
       </div>
 
       {/* Company Form Sheet */}
-      <CompanyFormSheet
+      <CompanyFormAdd
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleAddCompany}
+      />
+
+      {/* Form sửa công ty */}
+      <CompanyFormEdit
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        onSubmit={handleEditCompany}
+        company={selectedCompany}
       />
 
       {/* Table Container */}
