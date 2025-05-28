@@ -60,7 +60,7 @@ const handleLoginSubmit = async (e) => {
     formData.append('password', form.password);
     formData.append('captcha_code', form.captcha_code);
 
-    const response = await axios.post('http://localhost:8000/login', formData, {
+    const response = await axios.post('http://localhost:8000/api/tax/login', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

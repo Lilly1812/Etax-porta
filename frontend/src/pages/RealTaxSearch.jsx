@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FiSearch, FiFileText } from "react-icons/fi";
 import { toast } from 'react-toastify';
@@ -22,6 +22,158 @@ export default function RealTaxSearch() {
   const [tableData, setTableData] = useState([]);
   const [selectedTaxType, setSelectedTaxType] = useState("00");
   const [transactionCode, setTransactionCode] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [categoryCounts, setCategoryCounts] = useState({
+    all: 0,
+    gtgt: 0,
+    tncn: 0,
+    other: 0
+  });
+  const [filteredTableData, setFilteredTableData] = useState([]);
+
+  // Function to determine tax category from declaration name
+  const getTaxCategory = (declarationName) => {
+    if (!declarationName) return "other";
+    const name = declarationName.toLowerCase();
+    if (name.includes("gtgt") || name.includes("giá trị gia tăng")) {
+      return "gtgt";
+    } else if (name.includes("tncn") || name.includes("thu nhập cá nhân")) {
+      return "tncn";
+    }
+    return "other";
+  };
+
+  // Function to determine status from processing status
+  const getStatus = (processingStatus) => {
+    if (!processingStatus) return "";
+    const status = processingStatus.toLowerCase();
+    if (status.includes("không chấp nhận")) {
+      return "Không chấp nhận";
+    } else if (status.includes("chấp nhận")) {
+      return "Đã Chấp nhận";
+    } else if (status.includes("tiếp nhận")) {
+      return "Đã tiếp nhận";
+    }
+    return "";
+  };
+
+  // Update category counts when table data changes
+  useEffect(() => {
+    if (tableData.length > 1) {
+      const counts = {
+        all: tableData.length - 1, // Subtract header row
+        gtgt: 0,
+        tncn: 0,
+        other: 0
+      };
+
+      // Find the index of the declaration name column
+      const declarationNameIndex = tableData[0].findIndex(header => 
+        header === "Tờ khai/Phụ lục" || header === "Tên tờ khai"
+      );
+
+      if (declarationNameIndex !== -1) {
+        tableData.slice(1).forEach(row => {
+          const category = getTaxCategory(row[declarationNameIndex]);
+          counts[category]++;
+        });
+      }
+
+      setCategoryCounts(counts);
+    }
+  }, [tableData]);
+
+  // Update filtered data when table data, active category, or selected status changes
+  useEffect(() => {
+    if (tableData.length > 1) {
+      let filteredData = tableData;
+      
+      // First filter by category
+      if (activeCategory !== "all") {
+        const declarationNameIndex = tableData[0].findIndex(header => 
+          header === "Tờ khai/Phụ lục" || header === "Tên tờ khai"
+        );
+
+        if (declarationNameIndex !== -1) {
+          filteredData = [
+            tableData[0],
+            ...tableData.slice(1).filter(row => 
+              getTaxCategory(row[declarationNameIndex]) === activeCategory
+            )
+          ];
+        }
+      }
+
+      // Add status column
+      const dataWithStatus = [
+        [...filteredData[0], "Trạng thái"],
+        ...filteredData.slice(1).map(row => {
+          const processingStatusIndex = tableData[0].findIndex(header => 
+            header === "Tiến trình giải quyết hồ sơ (Trạng thái)"
+          );
+          const status = processingStatusIndex !== -1 ? getStatus(row[processingStatusIndex]) : "";
+          return [...row, status];
+        })
+      ];
+
+      // Then filter by status if not "all"
+      if (selectedStatus !== "all") {
+        const statusIndex = dataWithStatus[0].length - 1; // Last column is status
+        filteredData = [
+          dataWithStatus[0],
+          ...dataWithStatus.slice(1).filter(row => row[statusIndex] === selectedStatus)
+        ];
+      } else {
+        filteredData = dataWithStatus;
+      }
+
+      setFilteredTableData(filteredData);
+    }
+  }, [tableData, activeCategory, selectedStatus]);
+
+  const taxCategories = [
+    { id: "all", label: "Tất cả" },
+    { id: "gtgt", label: "Thuế GTGT" },
+    { id: "tncn", label: "Thuế TNCN" },
+    { id: "other", label: "Khác" }
+  ];
+
+  const handleCategoryClick = (categoryId) => {
+    setActiveCategory(categoryId);
+    if (categoryId === "all") {
+      setSelectedTaxType("00");
+    } else {
+      const declarationNameIndex = tableData[0].findIndex(header => 
+        header === "Tờ khai/Phụ lục" || header === "Tên tờ khai"
+      );
+
+      if (declarationNameIndex !== -1) {
+        const matchingRow = tableData.slice(1).find(row => 
+          getTaxCategory(row[declarationNameIndex]) === categoryId
+        );
+
+        if (matchingRow) {
+          const taxType = matchingRow[declarationNameIndex].split(" - ")[0].trim();
+          setSelectedTaxType(taxType);
+        }
+      }
+    }
+  };
+
+  // Set default dates on mount
+  useEffect(() => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const startOfYear = new Date(currentYear, 0, 1);
+
+    const formatDateForInput = (date) => date.toISOString().split('T')[0];
+
+    setDates({
+      from: formatDateForInput(startOfYear),
+      to: formatDateForInput(today)
+    });
+  }, []);
 
   const handleSearch = async () => {
     setLoadingSearch(true);
@@ -69,6 +221,7 @@ export default function RealTaxSearch() {
         <FiFileText size={26} className="text-green-700 mr-2" />
         <span className="text-lg font-semibold tracking-wide">TRA CỨU TỜ KHAI THUẾ</span>
       </div>
+
       {/* Filter row */}
       <div className="flex flex-wrap items-end gap-4 mb-4">
         {/* Thời gian */}
@@ -92,55 +245,6 @@ export default function RealTaxSearch() {
             onChange={(e) => setDates({ ...dates, to: e.target.value })}
             placeholder="Đến ngày"
           />
-        </div>
-        {/* Loại tờ khai */}
-        <div className="flex flex-col min-w-[260px] flex-1">
-          <label className="text-xs text-gray-500 mb-1">Loại tờ khai</label>
-          <select
-            id="maTKhai"
-            name="maTKhai"
-            className="p-2 border border-gray-300 rounded"
-            value={selectedTaxType}
-            onChange={(e) => setSelectedTaxType(e.target.value)}
-          >
-            <option value="00">--Tất cả--</option>
-            <option value="--">THUẾ GIÁ TRỊ GIA TĂNG</option>
-            <option value="01">&nbsp;&nbsp;&nbsp;&nbsp;01/GTGT - Tờ khai thuế giá trị gia tăng (GTGT)</option>
-            <option value="02">&nbsp;&nbsp;&nbsp;&nbsp;02/GTGT - Tờ khai thuế GTGT dành cho dự án đầu tư</option>
-            <option value="04">&nbsp;&nbsp;&nbsp;&nbsp;03/GTGT - Tờ khai GTGT theo phương pháp trực tiếp</option>
-            <option value="07">&nbsp;&nbsp;&nbsp;&nbsp;04/GTGT - Tờ khai GTGT theo phương pháp trực tiếp trên doanh thu</option>
-            <option value="53">&nbsp;&nbsp;&nbsp;&nbsp;05/GTGT - Tờ khai GTGT tạm nộp trên doanh số đối với kinh doanh ngoại tỉnh</option>
-            <option value="842">&nbsp;&nbsp;&nbsp;&nbsp;01/GTGT - TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)</option>
-            <option value="844">&nbsp;&nbsp;&nbsp;&nbsp;02/GTGT - TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)</option>
-            <option value="846">&nbsp;&nbsp;&nbsp;&nbsp;03/GTGT - TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)</option>
-            <option value="847">&nbsp;&nbsp;&nbsp;&nbsp;04/GTGT - TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)</option>
-            <option value="--">THUẾ THU NHẬP DOANH NGHIỆP</option>
-            <option value="03">&nbsp;&nbsp;&nbsp;&nbsp;03/TNDN - Tờ khai quyết toán thuế TNDN</option>
-            <option value="892">&nbsp;&nbsp;&nbsp;&nbsp;03/TNDN - Tờ khai quyết toán thuế TNDN (TT80/2021)</option>
-            <option value="--">THUẾ THU NHẬP CÁ NHÂN</option>
-            <option value="103">&nbsp;&nbsp;&nbsp;&nbsp;06/KK-TNCN - Tờ khai quyết toán thuế thu nhập cá nhân (TT156/2013)</option>
-            <option value="139">&nbsp;&nbsp;&nbsp;&nbsp;01/KK-BHDC - Tờ khai khấu trừ thuế thu nhập cá nhân (TT156/2013)</option>
-            <option value="394">&nbsp;&nbsp;&nbsp;&nbsp;05/KK-TNCN - Tờ khai khấu trừ thuế thu nhập cá nhân (TT92/2015)</option>
-            <option value="395">&nbsp;&nbsp;&nbsp;&nbsp;05/QTT-TNCN - Tờ khai quyết toán thuế TNCN Dành cho tổ chức, cá nhân trả thu nhập chịu thuế từ tiền lương, tiền công cho cá nhân (TT92/2015)</option>
-            <option value="864">&nbsp;&nbsp;&nbsp;&nbsp;05/KK-TNCN - Tờ khai khấu trừ thuế thu nhập cá nhân (TT80)</option>
-            <option value="953">&nbsp;&nbsp;&nbsp;&nbsp;05/QTT-TNCN - TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN (TT80/2021)</option>
-            <option value="--">BÁO CÁO TÀI CHÍNH</option>
-            <option value="285">&nbsp;&nbsp;&nbsp;&nbsp;TT 95/2008/TT-BTC - Báo cáo tài chính</option>
-            <option value="402">&nbsp;&nbsp;&nbsp;&nbsp;TT200 - Bộ báo cáo tài chính</option>
-            <option value="683">&nbsp;&nbsp;&nbsp;&nbsp;TT133_VuaVaNho_LT_B01a - Bộ báo cáo tài chính dành cho doanh nghiệp vừa và nhỏ hoạt động liên tục mẫu B01a (thông tư 133/2016/TT-BTC)</option>
-            <option value="695">&nbsp;&nbsp;&nbsp;&nbsp;TT24/BCTC_B01A - (excel)Bộ BCTC theo mẫu B01a của TT133 đáp ứng TT24</option>
-            <option value="699">&nbsp;&nbsp;&nbsp;&nbsp;BCTC_TT24_B01a - Báo cáo tài chính năm (TT24/2017/TT-BTC - mẫu B01a theo TT133)</option>
-            <option value="--">THUẾ MÔN BÀI</option>
-            <option value="464">&nbsp;&nbsp;&nbsp;&nbsp;01/MBAI - Tờ khai lệ phí môn bài (NĐ139/2016)</option>
-            <option value="55">&nbsp;&nbsp;&nbsp;&nbsp;01/MBAI - Tờ khai thuế môn bài (TT156/2013)</option>
-            <option value="824">&nbsp;&nbsp;&nbsp;&nbsp;01/LPMB - Tờ khai lệ phí môn bài (TT80/2021)</option>
-            <option value="--">THÔNG BÁO HÓA ĐƠN</option>
-            <option value="106">&nbsp;&nbsp;&nbsp;&nbsp;TB01/AC - Thông báo phát hành hóa đơn</option>
-            <option value="107">&nbsp;&nbsp;&nbsp;&nbsp;TB03/AC - Thông báo kết quả hủy hóa đơn</option>
-            <option value="--">BÁO CÁO HÓA ĐƠN</option>
-            <option value="102">&nbsp;&nbsp;&nbsp;&nbsp;BC26/AC - Báo cáo tình hình sử dụng hóa đơn</option>
-            <option value="300">&nbsp;&nbsp;&nbsp;&nbsp;BC26/AC - Báo cáo tình hình sử dụng hóa đơn theo số lượng</option>
-          </select>
         </div>
         {/* Mã giao dịch */}
         <div className="flex flex-col min-w-[180px]">
@@ -168,13 +272,51 @@ export default function RealTaxSearch() {
           )}
         </button>
       </div>
+      
+      {/* Navigation Bar */}
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+        {taxCategories.map((category) => (
+          <button
+            key={category.id}
+            onClick={() => handleCategoryClick(category.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex items-center
+              ${activeCategory === category.id 
+                ? 'bg-green-600 text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            {category.label}
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+              activeCategory === category.id 
+                ? 'bg-white/20 text-white' 
+                : 'bg-gray-200 text-gray-700'
+            }`}>
+              {categoryCounts[category.id]}
+            </span>
+          </button>
+        ))}
+        
+        {/* Status Filter Dropdown */}
+        <div className="ml-auto">
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+          >
+            <option value="all">Tất cả trạng thái</option>
+            <option value="Đã Chấp nhận">Đã Chấp nhận</option>
+            <option value="Không chấp nhận">Không chấp nhận</option>
+            <option value="Đã tiếp nhận">Đã tiếp nhận</option>
+          </select>
+        </div>
+      </div>
+
       {/* Table */}
       <div className="bg-white border border-gray-400 rounded-lg overflow-x-auto">
-        {tableData.length > 0 ? (
+        {filteredTableData.length > 0 ? (
           <table className="w-full text-sm text-gray-700">
             <thead className="bg-gray-50">
               <tr>
-                {tableData[0].map((header, idx) => (
+                {filteredTableData[0].map((header, idx) => (
                   <th
                     key={idx}
                     className={
@@ -187,13 +329,15 @@ export default function RealTaxSearch() {
               </tr>
             </thead>
             <tbody>
-              {tableData.slice(1).map((row, rowIndex) => {
+              {filteredTableData.slice(1).map((row, rowIndex) => {
                 return (
                   <tr key={rowIndex} className="border-b border-gray-400 hover:bg-gray-50">
                     {row.map((cell, cellIndex) => {
-                      const isTenToKhai = tableData[0][cellIndex] === 'Tờ khai/Phụ lục';
-                      const maGiaoDichIndex = tableData[0].findIndex(h => h === 'Mã giao dịch');
+                      const isTenToKhai = filteredTableData[0][cellIndex] === 'Tờ khai/Phụ lục' || 
+                                        filteredTableData[0][cellIndex] === 'Tên tờ khai';
+                      const maGiaoDichIndex = filteredTableData[0].findIndex(h => h === 'Mã giao dịch');
                       const maGiaoDich = row[maGiaoDichIndex];
+                      
                       if (isTenToKhai && maGiaoDich) {
                         return (
                           <td key={cellIndex} className="px-4 py-3 w-32 break-words">
@@ -203,6 +347,10 @@ export default function RealTaxSearch() {
                               target="_blank"
                               rel="noopener noreferrer"
                               title="Tải tệp tờ khai về"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                window.open(`http://localhost:8000/download?ma_giao_dich=${maGiaoDich}`, '_blank');
+                              }}
                             >
                               {cell}
                             </a>
@@ -212,7 +360,7 @@ export default function RealTaxSearch() {
                       return (
                         <td
                           key={cellIndex}
-                          className={`px-4 py-3 break-words ${tableData[0][cellIndex] === 'Tên tờ khai' ? 'w-32' : ''}`}
+                          className={`px-4 py-3 break-words ${filteredTableData[0][cellIndex] === 'Tên tờ khai' ? 'w-32' : ''}`}
                         >
                           {cell}
                         </td>

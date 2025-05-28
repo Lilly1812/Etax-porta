@@ -1,7 +1,7 @@
 import cx_Oracle
 
 # Nếu dùng Instant Client và chưa thêm vào PATH, cần khởi tạo client
-cx_Oracle.init_oracle_client(lib_dir=r"D:\ZIP\instantclient_23_8")
+cx_Oracle.init_oracle_client(lib_dir=r"C:\Users\hoang\Downloads\instantclient-basic-windows.x64-23.8.0.25.04\instantclient_23_8")
 
 def get_connection():
     return cx_Oracle.connect(
