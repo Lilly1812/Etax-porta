@@ -4,7 +4,7 @@ import { MdOutlineEdit, MdDeleteOutline } from "react-icons/md";
 
 const currentYear = new Date().getFullYear();
 
-export default function CompanyFormSheet({ isOpen, onClose, onSubmit }) {
+export default function CompanyFormEdit({ isOpen, onClose, onSubmit, company }) {
   const [form, setForm] = useState({
     taxId: "",
     companystartdate: "",
@@ -20,6 +20,22 @@ export default function CompanyFormSheet({ isOpen, onClose, onSubmit }) {
     startYear: "",
     endYear: "",
   });
+
+  // Khi prop company thay đổi, cập nhật lại form
+  useEffect(() => {
+    if (company) {
+      setForm({
+        taxId: company.taxId || "",
+        companystartdate: company.companystartdate || "",
+        name: company.name || "",
+        address: company.address || "",
+        email: company.email || "",
+        phone: company.phone || "",
+        website: company.website || "",
+        periods: company.periods || [],
+      });
+    }
+  }, [company, isOpen]);
 
   const addPeriod = () => {
     const start = parseInt(newPeriod.startYear);
@@ -51,11 +67,9 @@ export default function CompanyFormSheet({ isOpen, onClose, onSubmit }) {
     const updated = [];
 
     form.periods.forEach((period) => {
-      // Logic kiểm tra chồng chéo mới: [start, end] inclusive
       if (period.endYear < start || period.startYear > end) {
         updated.push(period);
       } else {
-        // Cắt phần bên trái nếu có
         if (period.startYear < start) {
           updated.push({
             startYear: period.startYear,
@@ -63,7 +77,6 @@ export default function CompanyFormSheet({ isOpen, onClose, onSubmit }) {
             type: period.type,
           });
         }
-        // Cắt phần bên phải nếu có
         if (period.endYear > end) {
           updated.push({
             startYear: end + 1,
@@ -96,7 +109,6 @@ export default function CompanyFormSheet({ isOpen, onClose, onSubmit }) {
       type: period.type,
     });
 
-    // Xóa period cũ khỏi danh sách để tránh trùng lặp khi thêm lại
     setForm((prev) => ({
       ...prev,
       periods: prev.periods.filter(
@@ -142,16 +154,6 @@ export default function CompanyFormSheet({ isOpen, onClose, onSubmit }) {
     }
 
     onSubmit(form);
-    setForm({
-      taxId: "",
-      companystartdate: "",
-      name: "",
-      address: "",
-      email: "",
-      phone: "",
-      website: "",
-      periods: [],
-    });
     onClose();
   };
 
@@ -172,7 +174,9 @@ export default function CompanyFormSheet({ isOpen, onClose, onSubmit }) {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-2 mx-4 border-b border-gray-300">
-          <h2 className="text-xl font-semibold">Thêm công ty mới</h2>
+          <h2 className="text-xl font-semibold">
+            {company ? "Sửa công ty" : "Thêm công ty mới"}
+          </h2>
           <button
             onClick={onClose}
             className="p-2 pr-0 hover:bg-gray-100 rounded-full"
@@ -206,8 +210,8 @@ export default function CompanyFormSheet({ isOpen, onClose, onSubmit }) {
                   type="date"
                   value={form.companystartdate}
                   onChange={(e) => {
-                    const dateStr = e.target.value; // "2022-01-01"
-                    const year = new Date(dateStr).getFullYear(); // 2022
+                    const dateStr = e.target.value;
+                    const year = new Date(dateStr).getFullYear();
                     setForm({ ...form, companystartdate: dateStr });
                     setNewPeriod({ ...newPeriod, startYear: year });
                   }}

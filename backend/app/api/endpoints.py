@@ -3,6 +3,7 @@ from app.utils.selenium_utils import create_driver
 from app.services import tax_service
 from app.utils.url_manager import URLStateManager
 from app.db.oracle import get_connection
+from fastapi import Body
 
 router = APIRouter()
 
@@ -42,14 +43,71 @@ def get_companies():
         companies = []
         for row in rows:
             companies.append({
-                "TAX_CODE": row[0],
-                "COMPANY_NAME": row[1],
-                "ADDRESS": row[2],
-                "PHONE": row[3],
-                "WEBSITE": row[4],
-                "ESTABLISHED_DATE": row[5],
+                "taxId": row[0],
+                "name": row[1],
+                "address": row[2],
+                "phone": row[3],
+                "website": row[4],
+                "companystartdate": row[5]
             })
         return companies
+    finally:
+        cur.close()
+        conn.close()
+
+@router.post("/api/companies")
+def add_company(company: dict = Body(...)):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            INSERT INTO E_TAX.companies (TAX_CODE, COMPANY_NAME, ESTABLISHED_DATE, ADDRESS, PHONE, WEBSITE)
+            VALUES (:1, :2, TO_DATE(:3, 'YYYY-MM-DD'), :4, :5, :6)
+        """, (
+            company["taxId"],
+            company["name"],
+            company["companystartdate"],
+            company["address"],
+            company["phone"],
+            company["website"]
+        ))
+        conn.commit()
+        return {"success": True}
+    finally:
+        cur.close()
+        conn.close()
+
+@router.put("/api/companies/{tax_id}")
+def update_company(tax_id: str, company: dict = Body(...)):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            UPDATE E_TAX.companies
+            SET COMPANY_NAME=:1, ESTABLISHED_DATE=:2, ADDRESS=:3, PHONE=:4, WEBSITE=:5
+            WHERE TAX_CODE=:6
+        """, (
+            company["name"],
+            company["companystartdate"],
+            company["address"],
+            company["phone"],
+            company["website"],
+            tax_id
+        ))
+        conn.commit()
+        return {"success": True}
+    finally:
+        cur.close()
+        conn.close()
+        
+@router.delete("/api/companies/{tax_id}")
+def delete_company(tax_id: str):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM E_TAX.companies WHERE TAX_CODE=:1", (tax_id,))
+        conn.commit()
+        return {"success": True}
     finally:
         cur.close()
         conn.close()
