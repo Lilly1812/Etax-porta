@@ -23,6 +23,7 @@ export default function RealTaxSearch() {
   const [selectedTaxType, setSelectedTaxType] = useState("00");
   const [transactionCode, setTransactionCode] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
   const [categoryCounts, setCategoryCounts] = useState({
     all: 0,
     gtgt: 0,
@@ -41,6 +42,20 @@ export default function RealTaxSearch() {
       return "tncn";
     }
     return "other";
+  };
+
+  // Function to determine status from processing status
+  const getStatus = (processingStatus) => {
+    if (!processingStatus) return "";
+    const status = processingStatus.toLowerCase();
+    if (status.includes("không chấp nhận")) {
+      return "Không chấp nhận";
+    } else if (status.includes("chấp nhận")) {
+      return "Đã Chấp nhận";
+    } else if (status.includes("tiếp nhận")) {
+      return "Đã tiếp nhận";
+    }
+    return "";
   };
 
   // Update category counts when table data changes
@@ -69,30 +84,53 @@ export default function RealTaxSearch() {
     }
   }, [tableData]);
 
-  // Update filtered data when table data or active category changes
+  // Update filtered data when table data, active category, or selected status changes
   useEffect(() => {
     if (tableData.length > 1) {
-      if (activeCategory === "all") {
-        setFilteredTableData(tableData);
-      } else {
+      let filteredData = tableData;
+      
+      // First filter by category
+      if (activeCategory !== "all") {
         const declarationNameIndex = tableData[0].findIndex(header => 
           header === "Tờ khai/Phụ lục" || header === "Tên tờ khai"
         );
 
         if (declarationNameIndex !== -1) {
-          const filtered = [
-            tableData[0], // Keep header row
+          filteredData = [
+            tableData[0],
             ...tableData.slice(1).filter(row => 
               getTaxCategory(row[declarationNameIndex]) === activeCategory
             )
           ];
-          setFilteredTableData(filtered);
-        } else {
-          setFilteredTableData(tableData);
         }
       }
+
+      // Add status column
+      const dataWithStatus = [
+        [...filteredData[0], "Trạng thái"],
+        ...filteredData.slice(1).map(row => {
+          const processingStatusIndex = tableData[0].findIndex(header => 
+            header === "Tiến trình giải quyết hồ sơ (Trạng thái)"
+          );
+          const status = processingStatusIndex !== -1 ? getStatus(row[processingStatusIndex]) : "";
+          return [...row, status];
+        })
+      ];
+
+      // Then filter by status if not "all"
+      if (selectedStatus !== "all") {
+        const statusIndex = dataWithStatus[0].length - 1; // Last column is status
+        filteredData = [
+          dataWithStatus[0],
+          ...dataWithStatus.slice(1).filter(row => row[statusIndex] === selectedStatus)
+        ];
+      } else {
+        filteredData = dataWithStatus;
+      }
+
+      setFilteredTableData(filteredData);
     }
-  }, [tableData, activeCategory]);
+  }, [tableData, activeCategory, selectedStatus]);
 
   const taxCategories = [
     { id: "all", label: "Tất cả" },
@@ -136,14 +174,6 @@ export default function RealTaxSearch() {
       to: formatDateForInput(today)
     });
   }, []);
-
-  // Run search when dates are set (on first load)
-  useEffect(() => {
-    if (dates.from && dates.to) {
-      handleSearch();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dates.from, dates.to]);
 
   const handleSearch = async () => {
     setLoadingSearch(true);
@@ -216,55 +246,6 @@ export default function RealTaxSearch() {
             placeholder="Đến ngày"
           />
         </div>
-        {/* Loại tờ khai */}
-        <div className="flex flex-col min-w-[260px] flex-1">
-          <label className="text-xs text-gray-500 mb-1">Loại tờ khai</label>
-          <select
-            id="maTKhai"
-            name="maTKhai"
-            className="p-2 border border-gray-300 rounded"
-            value={selectedTaxType}
-            onChange={(e) => setSelectedTaxType(e.target.value)}
-          >
-            <option value="00">--Tất cả--</option>
-            <option value="--">THUẾ GIÁ TRỊ GIA TĂNG</option>
-            <option value="01">&nbsp;&nbsp;&nbsp;&nbsp;01/GTGT - Tờ khai thuế giá trị gia tăng (GTGT)</option>
-            <option value="02">&nbsp;&nbsp;&nbsp;&nbsp;02/GTGT - Tờ khai thuế GTGT dành cho dự án đầu tư</option>
-            <option value="04">&nbsp;&nbsp;&nbsp;&nbsp;03/GTGT - Tờ khai GTGT theo phương pháp trực tiếp</option>
-            <option value="07">&nbsp;&nbsp;&nbsp;&nbsp;04/GTGT - Tờ khai GTGT theo phương pháp trực tiếp trên doanh thu</option>
-            <option value="53">&nbsp;&nbsp;&nbsp;&nbsp;05/GTGT - Tờ khai GTGT tạm nộp trên doanh số đối với kinh doanh ngoại tỉnh</option>
-            <option value="842">&nbsp;&nbsp;&nbsp;&nbsp;01/GTGT - TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)</option>
-            <option value="844">&nbsp;&nbsp;&nbsp;&nbsp;02/GTGT - TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)</option>
-            <option value="846">&nbsp;&nbsp;&nbsp;&nbsp;03/GTGT - TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)</option>
-            <option value="847">&nbsp;&nbsp;&nbsp;&nbsp;04/GTGT - TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (TT80/2021)</option>
-            <option value="--">THUẾ THU NHẬP DOANH NGHIỆP</option>
-            <option value="03">&nbsp;&nbsp;&nbsp;&nbsp;03/TNDN - Tờ khai quyết toán thuế TNDN</option>
-            <option value="892">&nbsp;&nbsp;&nbsp;&nbsp;03/TNDN - Tờ khai quyết toán thuế TNDN (TT80/2021)</option>
-            <option value="--">THUẾ THU NHẬP CÁ NHÂN</option>
-            <option value="103">&nbsp;&nbsp;&nbsp;&nbsp;06/KK-TNCN - Tờ khai quyết toán thuế thu nhập cá nhân (TT156/2013)</option>
-            <option value="139">&nbsp;&nbsp;&nbsp;&nbsp;01/KK-BHDC - Tờ khai khấu trừ thuế thu nhập cá nhân (TT156/2013)</option>
-            <option value="394">&nbsp;&nbsp;&nbsp;&nbsp;05/KK-TNCN - Tờ khai khấu trừ thuế thu nhập cá nhân (TT92/2015)</option>
-            <option value="395">&nbsp;&nbsp;&nbsp;&nbsp;05/QTT-TNCN - Tờ khai quyết toán thuế TNCN Dành cho tổ chức, cá nhân trả thu nhập chịu thuế từ tiền lương, tiền công cho cá nhân (TT92/2015)</option>
-            <option value="864">&nbsp;&nbsp;&nbsp;&nbsp;05/KK-TNCN - Tờ khai khấu trừ thuế thu nhập cá nhân (TT80)</option>
-            <option value="953">&nbsp;&nbsp;&nbsp;&nbsp;05/QTT-TNCN - TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN (TT80/2021)</option>
-            <option value="--">BÁO CÁO TÀI CHÍNH</option>
-            <option value="285">&nbsp;&nbsp;&nbsp;&nbsp;TT 95/2008/TT-BTC - Báo cáo tài chính</option>
-            <option value="402">&nbsp;&nbsp;&nbsp;&nbsp;TT200 - Bộ báo cáo tài chính</option>
-            <option value="683">&nbsp;&nbsp;&nbsp;&nbsp;TT133_VuaVaNho_LT_B01a - Bộ báo cáo tài chính dành cho doanh nghiệp vừa và nhỏ hoạt động liên tục mẫu B01a (thông tư 133/2016/TT-BTC)</option>
-            <option value="695">&nbsp;&nbsp;&nbsp;&nbsp;TT24/BCTC_B01A - (excel)Bộ BCTC theo mẫu B01a của TT133 đáp ứng TT24</option>
-            <option value="699">&nbsp;&nbsp;&nbsp;&nbsp;BCTC_TT24_B01a - Báo cáo tài chính năm (TT24/2017/TT-BTC - mẫu B01a theo TT133)</option>
-            <option value="--">THUẾ MÔN BÀI</option>
-            <option value="464">&nbsp;&nbsp;&nbsp;&nbsp;01/MBAI - Tờ khai lệ phí môn bài (NĐ139/2016)</option>
-            <option value="55">&nbsp;&nbsp;&nbsp;&nbsp;01/MBAI - Tờ khai thuế môn bài (TT156/2013)</option>
-            <option value="824">&nbsp;&nbsp;&nbsp;&nbsp;01/LPMB - Tờ khai lệ phí môn bài (TT80/2021)</option>
-            <option value="--">THÔNG BÁO HÓA ĐƠN</option>
-            <option value="106">&nbsp;&nbsp;&nbsp;&nbsp;TB01/AC - Thông báo phát hành hóa đơn</option>
-            <option value="107">&nbsp;&nbsp;&nbsp;&nbsp;TB03/AC - Thông báo kết quả hủy hóa đơn</option>
-            <option value="--">BÁO CÁO HÓA ĐƠN</option>
-            <option value="102">&nbsp;&nbsp;&nbsp;&nbsp;BC26/AC - Báo cáo tình hình sử dụng hóa đơn</option>
-            <option value="300">&nbsp;&nbsp;&nbsp;&nbsp;BC26/AC - Báo cáo tình hình sử dụng hóa đơn theo số lượng</option>
-          </select>
-        </div>
         {/* Mã giao dịch */}
         <div className="flex flex-col min-w-[180px]">
           <label className="text-xs text-gray-500 mb-1">Mã giao dịch</label>
@@ -313,6 +294,20 @@ export default function RealTaxSearch() {
             </span>
           </button>
         ))}
+        
+        {/* Status Filter Dropdown */}
+        <div className="ml-auto">
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+          >
+            <option value="all">Tất cả trạng thái</option>
+            <option value="Đã Chấp nhận">Đã Chấp nhận</option>
+            <option value="Không chấp nhận">Không chấp nhận</option>
+            <option value="Đã tiếp nhận">Đã tiếp nhận</option>
+          </select>
+        </div>
       </div>
 
       {/* Table */}

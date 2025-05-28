@@ -377,53 +377,98 @@ def display(driver, wait):
     try:
         if not check_session(driver):
             raise HTTPException(status_code=401, detail="Session expired, please login again")
+        
         iframe = wait.until(EC.presence_of_element_located((By.ID, "tranFrame")))
         driver.switch_to.frame(iframe)
+        
         try:
-            table = wait.until(EC.presence_of_element_located((By.ID, "data_content_onday")))
-            rows = table.find_elements(By.TAG_NAME, "tr")
-            data = []
+            # Initialize data list to store all pages' data
+            all_data = []
             skip_indices = set()
+            current_page = 1
+            total_pages = 1
             
-            for i, row in enumerate(rows):
-                headers = row.find_elements(By.TAG_NAME, "th")
-                if headers:
-                    header_texts = [th.text.strip() for th in headers]
-                    for idx, text in enumerate(header_texts):
-                        if text in ["Gửi phụ lục", "Tải thông báo"]:
-                            skip_indices.add(idx)
-                    filtered_header = [text for idx, text in enumerate(header_texts) if idx not in skip_indices]
-                    data.append(filtered_header)
-                    continue
-                cols = row.find_elements(By.TAG_NAME, "td")
-                if cols:
-                    row_data = []
-                    for idx, col in enumerate(cols):
-                        if idx in skip_indices:
-                            continue
-                            
-                        cell_text = col.text.strip()
-                        # If this is the column with the download link
-                        if "Tờ khai/Phụ lục" in (data[0][len(row_data)] if data and data[0] else ""):
-                            try:
-                                # Try to find the download link and extract maGiaoDich
-                                link = col.find_element(By.TAG_NAME, "a")
-                                onclick = link.get_attribute("onclick")
-                                if onclick and "downloadBke" in onclick:
-                                    # Extract maGiaoDich from downloadBke('number')
-                                    match = re.search(r"downloadBke\('(\d+)'\)", onclick)
-                                    if match:
-                                        ma_giao_dich = match.group(1)
-                                        # Add maGiaoDich to the appropriate column if it doesn't exist
-                                        ma_giao_dich_idx = data[0].index("Mã giao dịch") if "Mã giao dịch" in data[0] else -1
-                                        if ma_giao_dich_idx >= 0 and len(row_data) > ma_giao_dich_idx and not row_data[ma_giao_dich_idx]:
-                                            row_data[ma_giao_dich_idx] = ma_giao_dich
-                            except Exception as e:
-                                print(f"Error extracting maGiaoDich: {e}")
+            # Get total pages from pagination info
+            try:
+                pagination_div = wait.until(EC.presence_of_element_located((By.ID, "currAcc")))
+                page_text = pagination_div.text.strip()
+                # Extract total pages from text like "Trang 1/2"
+                match = re.search(r"Trang\s+\d+/(\d+)", page_text)
+                if match:
+                    total_pages = int(match.group(1))
+                    print(f"[DEBUG] Found {total_pages} total pages")
+            except Exception as e:
+                print(f"[WARN] Could not determine total pages: {str(e)}")
+            
+            while current_page <= total_pages:
+                print(f"[DEBUG] Processing page {current_page}/{total_pages}")
+                
+                # Wait for table to be present
+                table = wait.until(EC.presence_of_element_located((By.ID, "data_content_onday")))
+                rows = table.find_elements(By.TAG_NAME, "tr")
+                
+                # Process current page data
+                for i, row in enumerate(rows):
+                    headers = row.find_elements(By.TAG_NAME, "th")
+                    if headers:
+                        header_texts = [th.text.strip() for th in headers]
+                        for idx, text in enumerate(header_texts):
+                            if text in ["Gửi phụ lục", "Tải thông báo"]:
+                                skip_indices.add(idx)
+                        filtered_header = [text for idx, text in enumerate(header_texts) if idx not in skip_indices]
+                        if not all_data:  # Only add headers once
+                            all_data.append(filtered_header)
+                        continue
+                        
+                    cols = row.find_elements(By.TAG_NAME, "td")
+                    if cols:
+                        row_data = []
+                        for idx, col in enumerate(cols):
+                            if idx in skip_indices:
+                                continue
                                 
-                        row_data.append(cell_text)
-                    data.append(row_data)
-            if len(data) <= 1:
+                            cell_text = col.text.strip()
+                            # If this is the column with the download link
+                            if "Tờ khai/Phụ lục" in (all_data[0][len(row_data)] if all_data and all_data[0] else ""):
+                                try:
+                                    # Try to find the download link and extract maGiaoDich
+                                    link = col.find_element(By.TAG_NAME, "a")
+                                    onclick = link.get_attribute("onclick")
+                                    if onclick and "downloadBke" in onclick:
+                                        # Extract maGiaoDich from downloadBke('number')
+                                        match = re.search(r"downloadBke\('(\d+)'\)", onclick)
+                                        if match:
+                                            ma_giao_dich = match.group(1)
+                                            # Add maGiaoDich to the appropriate column if it doesn't exist
+                                            ma_giao_dich_idx = all_data[0].index("Mã giao dịch") if "Mã giao dịch" in all_data[0] else -1
+                                            if ma_giao_dich_idx >= 0 and len(row_data) > ma_giao_dich_idx and not row_data[ma_giao_dich_idx]:
+                                                row_data[ma_giao_dich_idx] = ma_giao_dich
+                                except Exception as e:
+                                    print(f"Error extracting maGiaoDich: {e}")
+                                    
+                            row_data.append(cell_text)
+                        all_data.append(row_data)
+                
+                # Move to next page if not on last page
+                if current_page < total_pages:
+                    try:
+                        # Try to find and click the next page link
+                        next_page_link = wait.until(EC.element_to_be_clickable(
+                            (By.CSS_SELECTOR, f"#currAcc a[href*='pn={current_page + 1}']")
+                        ))
+                        next_page_link.click()
+                    except Exception as e:
+                        print(f"[WARN] Could not find next page link, trying JavaScript navigation: {str(e)}")
+                        # Use JavaScript to navigate to next page
+                        driver.execute_script(f"gotoPage({current_page + 1}, 'gotoPageNO_listTKhai')")
+                    
+                    # Wait for page load and table to be present
+                    time.sleep(2)
+                    wait.until(EC.presence_of_element_located((By.ID, "data_content_onday")))
+                
+                current_page += 1
+            
+            if len(all_data) <= 1:
                 driver.switch_to.default_content()
                 return {
                     "table": [["Không có dữ liệu"]],
@@ -434,8 +479,10 @@ def display(driver, wait):
                         "padding": "20px"
                     }
                 }
+            
             driver.switch_to.default_content()
-            return {"table": data}
+            return {"table": all_data}
+            
         except TimeoutException:
             driver.switch_to.default_content()
             return {
@@ -611,13 +658,20 @@ def displaylisttax(driver, wait, fromdate=None, todate=None):
         for category, items in tax_data.items():
             print(f"[DEBUG] Category '{category}': {len(items)} items")
 
-        # Lấy năm hiện tại
-        current_year = datetime.now().year
-        print(f"[DEBUG] Current year: {current_year}")
+        # Determine the year to use based on input dates
+        target_year = datetime.now().year
+        if fromdate:
+            from_date = datetime.strptime(fromdate, "%d/%m/%Y")
+            target_year = from_date.year
+        elif todate:
+            to_date = datetime.strptime(todate, "%d/%m/%Y")
+            target_year = to_date.year
+
+        print(f"[DEBUG] Using target year: {target_year}")
 
         try:
-            # Gọi hàm xử lý danh sách tờ khai
-            df_result = hien_thi_to_khai_phai_nop(tax_data, current_year, theo_quy=True)
+            # Gọi hàm xử lý danh sách tờ khai với fromdate và todate
+            df_result = hien_thi_to_khai_phai_nop(tax_data, target_year, theo_quy=True, fromdate=fromdate, todate=todate)
             print(f"[DEBUG] Generated {len(df_result)} required tax declarations")
             print(f"[DEBUG] Columns: {list(df_result.columns)}")
             print(f"[DEBUG] First 3 declarations:")
@@ -630,8 +684,8 @@ def displaylisttax(driver, wait, fromdate=None, todate=None):
             
             # Nếu không có ngày được cung cấp, sử dụng toàn bộ năm hiện tại
             if not fromdate or not todate:
-                search_fromdate = f"01/01/{current_year}"
-                search_todate = f"31/12/{current_year}"
+                search_fromdate = f"01/01/{target_year}"
+                search_todate = f"31/12/{target_year}"
             
             print(f"[DEBUG] Search period: {search_fromdate} to {search_todate}")
 
@@ -687,7 +741,7 @@ def displaylisttax(driver, wait, fromdate=None, todate=None):
 
             return {
                 "message": f"Danh sách {total_count} tờ khai doanh nghiệp phải nộp" + 
-                          (f" từ {fromdate} đến {todate}" if fromdate and todate else f" năm {current_year}"),
+                          (f" từ {fromdate} đến {todate}" if fromdate and todate else f" năm {target_year}"),
                 "data": table_data
             }
         except Exception as e:
@@ -713,66 +767,131 @@ def tinh_han_nop(ky: str) -> str:
     try:
         print(f"[DEBUG] Calculating due date for period: '{ky}'")
         if ky.startswith("Q"):
+            # Quarterly declaration: Last day of the first month of the following quarter
             quy, nam = ky.split("/")
-            thang = int(quy[1]) * 3
-            han = datetime(int(nam), thang, 30)  # giả định ngày 30
-            result = han.strftime("%d/%m/%Y")
+            nam = int(nam)
+            quy_num = int(quy[1])
+            
+            # Calculate the first month of the following quarter
+            next_quarter_month = (quy_num * 3) + 1
+            if next_quarter_month > 12:
+                next_quarter_month = 1
+                nam += 1
+                
+            # Get the last day of the month
+            if next_quarter_month in [4, 6, 9, 11]:  # Months with 30 days
+                last_day = 30
+            elif next_quarter_month == 2:  # February
+                # Check for leap year
+                if nam % 4 == 0 and (nam % 100 != 0 or nam % 400 == 0):
+                    last_day = 29
+                else:
+                    last_day = 28
+            else:  # Months with 31 days
+                last_day = 31
+                
+            result = f"{last_day:02d}/{next_quarter_month:02d}/{nam}"
             print(f"[DEBUG] Quarter {ky} -> Due date: {result}")
             return result
+            
         elif ky.startswith("T"):
+            # Monthly declaration: 20th of the following month
             thang, nam = ky[1:].split("/")
-            han = datetime(int(nam), int(thang), 20)
-            result = han.strftime("%d/%m/%Y")
+            thang = int(thang)
+            nam = int(nam)
+            
+            # Calculate the following month
+            next_month = thang + 1
+            if next_month > 12:
+                next_month = 1
+                nam += 1
+                
+            result = f"20/{next_month:02d}/{nam}"
             print(f"[DEBUG] Month {ky} -> Due date: {result}")
             return result
+            
         elif ky.isdigit():
-            result = f"31/03/{int(ky)+1}"  # Hạn quyết toán năm sau
+            # Annual declaration: 31/03 of the following year
+            nam = int(ky)
+            result = f"31/03/{nam + 1}"
             print(f"[DEBUG] Year {ky} -> Due date: {result}")
             return result
-        else:
+            
+        elif ky == "Từng lần phát sinh":
             result = "Theo từng lần phát sinh"
-            print(f"[DEBUG] Other period {ky} -> Due date: {result}")
+            print(f"[DEBUG] Each occurrence -> Due date: {result}")
             return result
+            
+        else:
+            result = "Không xác định"
+            print(f"[DEBUG] Unknown period {ky} -> Due date: {result}")
+            return result
+            
     except Exception as e:
         print(f"[DEBUG] Error calculating due date for '{ky}': {str(e)}")
         return "Không xác định"
 
-def hien_thi_to_khai_phai_nop(data, nam, theo_quy=True):
+def hien_thi_to_khai_phai_nop(data, nam, theo_quy=True, fromdate=None, todate=None):
     bang_ket_qua = []
+    
+    # Check if we need to include previous year's declarations
+    include_prev_year = False
+    if fromdate and todate:
+        from_date = datetime.strptime(fromdate, "%d/%m/%Y")
+        to_date = datetime.strptime(todate, "%d/%m/%Y")
+        
+        # If search period includes January or is within first 3 months
+        if from_date.month == 1 or (from_date.month <= 3 and from_date.year == nam):
+            include_prev_year = True
+            prev_year = nam - 1
+            print(f"[DEBUG] Including previous year ({prev_year}) declarations")
 
-    for loai_thue, danh_sach_to_khai in data.items():
-        for tk in danh_sach_to_khai:
-            ten = tk["ten_to_khai"]
-            ma = tk["ten_viet_tat"]
-            ky_ke_khai = tk["ky_ke_khai"].strip().lower()
+    # Process declarations for all relevant years
+    years_to_process = [nam]
+    if include_prev_year:
+        years_to_process.append(nam - 1)
+    
+    for year in years_to_process:
+        for loai_thue, danh_sach_to_khai in data.items():
+            for tk in danh_sach_to_khai:
+                ten = tk["ten_to_khai"]
+                ma = tk["ten_viet_tat"]
+                ky_ke_khai = tk["ky_ke_khai"].strip().lower()
 
-            if ky_ke_khai == "tháng/quý":
-                if theo_quy:
-                    ky = [f"Q{i}/{nam}" for i in range(1, 5)]
+                # Handle declarations for the current year
+                if ky_ke_khai == "tháng/quý":
+                    if theo_quy:
+                        ky = [f"Q{i}/{year}" for i in range(1, 5)]
+                    else:
+                        ky = [f"T{m}/{year}" for m in range(1, 13)]
+                elif ky_ke_khai == "quý":
+                    ky = [f"Q{i}/{year}" for i in range(1, 5)]
+                elif ky_ke_khai == "tháng":
+                    ky = [f"T{m}/{year}" for m in range(1, 13)]
+                elif ky_ke_khai == "năm":
+                    ky = [str(year)]
+                elif ky_ke_khai == "từng lần phát sinh":
+                    ky = ["Từng lần phát sinh"]
                 else:
-                    ky = [f"T{m}/{nam}" for m in range(1, 13)]
-            elif ky_ke_khai == "quý":
-                ky = [f"Q{i}/{nam}" for i in range(1, 5)]
-            elif ky_ke_khai == "tháng":
-                ky = [f"T{m}/{nam}" for m in range(1, 13)]
-            elif ky_ke_khai == "năm":
-                ky = [str(nam)]
-            elif ky_ke_khai == "từng lần phát sinh":
-                ky = ["Từng lần phát sinh"]
-            else:
-                ky = ["Không xác định"]
+                    ky = ["Không xác định"]
 
-            for k in ky:
-                han_nop = tinh_han_nop(k)
-                bang_ket_qua.append({
-                    "Loại thuế": loai_thue,
-                    "Tên tờ khai": ten,
-                    "Mã": ma,
-                    "Kỳ kê khai": k,
-                    "Hạn nộp": han_nop,
-                    "Trạng thái": "Chưa hoàn thành"
-                })
+                for k in ky:
+                    han_nop = tinh_han_nop(k)
+                    bang_ket_qua.append({
+                        "Tên tờ khai": ten,
+                        "Mã": ma,
+                        "Kỳ kê khai": k,
+                        "Hạn nộp": han_nop
+                    })
 
+    # Convert to DataFrame
     df = pd.DataFrame(bang_ket_qua)
+    
+    # Sort by due date
+    if not df.empty:
+        df['Hạn nộp dt'] = pd.to_datetime(df['Hạn nộp'], format='%d/%m/%Y', errors='coerce')
+        df = df.sort_values('Hạn nộp dt')
+        df = df.drop('Hạn nộp dt', axis=1)
+    
     return df
 
