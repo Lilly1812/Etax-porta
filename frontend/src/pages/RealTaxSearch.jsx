@@ -29,6 +29,8 @@ export default function RealTaxSearch() {
     all: 0,
     gtgt: 0,
     tncn: 0,
+    tndn: 0,
+    bcao: 0,
     other: 0
   });
   const [filteredTableData, setFilteredTableData] = useState([]);
@@ -41,6 +43,10 @@ export default function RealTaxSearch() {
       return "gtgt";
     } else if (name.includes("tncn") || name.includes("thu nhập cá nhân")) {
       return "tncn";
+    } else if (name.includes("tndn") || name.includes("thuế thu nhập doanh nghiệp")) {
+      return "tndn";
+    } else if (name.includes("bcao") || name.includes("báo cáo tài chính")) {
+      return "bcao";
     }
     return "other";
   };
@@ -66,6 +72,8 @@ export default function RealTaxSearch() {
         all: tableData.length - 1, // Subtract header row
         gtgt: 0,
         tncn: 0,
+        tndn: 0,
+        bcao: 0,
         other: 0
       };
 
@@ -136,7 +144,9 @@ export default function RealTaxSearch() {
   const taxCategories = [
     { id: "all", label: "Tất cả" },
     { id: "gtgt", label: "Thuế GTGT" },
+    { id: "tndn", label: "Thuế TNDN" },
     { id: "tncn", label: "Thuế TNCN" },
+    { id: "bcao", label: "Báo cáo tài chính" },
     { id: "other", label: "Khác" }
   ];
 
@@ -334,7 +344,7 @@ export default function RealTaxSearch() {
       </div>
       
       {/* Navigation Bar */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+      <div className="flex gap-2 mb-4 overflow-x-auto mt-8">
         {taxCategories.map((category) => (
           <button
             key={category.id}
@@ -356,7 +366,17 @@ export default function RealTaxSearch() {
         ))}
         
         {/* Status Filter Dropdown */}
-        <div className="ml-auto">
+        <div className="ml-auto flex gap-2">
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+          >
+            <option value="all">Loại tờ khai</option>
+            <option value="Đã Chấp nhận">Đã Chấp nhận</option>
+            <option value="Không chấp nhận">Không chấp nhận</option>
+            <option value="Đã tiếp nhận">Đã tiếp nhận</option>
+          </select>
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}

@@ -894,3 +894,4 @@ def hien_thi_to_khai_phai_nop(data, nam, theo_quy=True, fromdate=None, todate=No
         df = df.drop('Hạn nộp dt', axis=1)
     
     return df
+

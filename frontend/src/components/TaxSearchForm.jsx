@@ -1,6 +1,17 @@
 import React from 'react';
 import { FiSearch, FiFile } from 'react-icons/fi';
-import Spinner from './Spinner';
+function Spinner({ size = 8 }) {
+  return (
+    <div
+      className={`w-${size} h-${size} border-4 border-green-500 border-t-transparent rounded-full animate-spin`}
+      style={{
+        minWidth: '2rem',
+        minHeight: '2rem',
+        margin: '0.5rem'
+      }}
+    />
+  );
+}
 const handleExport = async () => {
   if (filteredTableData.length <= 1) {
     toast.warning('Không có dữ liệu để xuất');

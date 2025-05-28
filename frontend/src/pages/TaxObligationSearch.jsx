@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiFileText } from "react-icons/fi";
 import { useCompany } from "../context/CompanyContext";
 import { findTaxCodeByName, validateTaxCode } from "../utils/taxCodeUtils";
@@ -17,7 +17,17 @@ export default function TaxObligationSearch() {
   const [selectedTaxType, setSelectedTaxType] = useState("all"); // "all", "gtgt", "tncn"
   const [selectedStatus, setSelectedStatus] = useState("all"); // "all", "completed", "pending"
   const { selectedCompany } = useCompany();
+  // Set default dates on mount
+  useEffect(() => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const startOfYear = new Date(currentYear, 0, 1);
 
+    const formatDateForInput = (date) => date.toISOString().split('T')[0];
+
+    setFromDate(formatDateForInput(startOfYear));
+    setToDate(formatDateForInput(today));
+  }, []);
   // Filter results based on selected tax type and status
   const getFilteredResults = () => {
     if (!searchResults.length) return [];
@@ -189,9 +199,9 @@ export default function TaxObligationSearch() {
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow m-6 px-8 flex flex-col gap-6">
+    <div className="p-6 bg-white rounded-lg shadow m-6 px-8 flex flex-col gap-4">
       {/* Header */}
-      <div className="">
+      <div className="mb-4">
       <div className="flex items-center mb-4">
         <FiFileText size={26} className="text-green-700 mr-2" />
         <span className="text-lg font-semibold tracking-wide">TRA CỨU NGHĨA VỤ KÊ KHAI THUẾ</span>
