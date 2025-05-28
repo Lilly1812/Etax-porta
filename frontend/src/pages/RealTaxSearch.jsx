@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FiSearch, FiFileText } from "react-icons/fi";
+import { FiSearch, FiFileText, FiDownload, FiFile } from "react-icons/fi";
 import { toast } from 'react-toastify';
 
 function Spinner({ size = 8 }) {
@@ -24,6 +24,7 @@ export default function RealTaxSearch() {
   const [transactionCode, setTransactionCode] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedRows, setSelectedRows] = useState(new Set());
   const [categoryCounts, setCategoryCounts] = useState({
     all: 0,
     gtgt: 0,
@@ -214,6 +215,43 @@ export default function RealTaxSearch() {
     }
   };
 
+  const handleDownload = async () => {
+    if (selectedRows.size === 0) {
+      toast.warning('Vui lòng chọn ít nhất một tờ khai để tải xuống');
+      return;
+    }
+    // Implement download logic here
+    toast.info('Đang tải xuống các tờ khai đã chọn...');
+  };
+
+  const handleExport = async () => {
+    if (filteredTableData.length <= 1) {
+      toast.warning('Không có dữ liệu để xuất');
+      return;
+    }
+    // Implement export logic here
+    toast.info('Đang xuất dữ liệu ra file Excel...');
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const allRows = new Set(filteredTableData.slice(1).map((_, index) => index));
+      setSelectedRows(allRows);
+    } else {
+      setSelectedRows(new Set());
+    }
+  };
+
+  const handleSelectRow = (rowIndex) => {
+    const newSelectedRows = new Set(selectedRows);
+    if (newSelectedRows.has(rowIndex)) {
+      newSelectedRows.delete(rowIndex);
+    } else {
+      newSelectedRows.add(rowIndex);
+    }
+    setSelectedRows(newSelectedRows);
+  };
+
   return (
     <div className="p-6 bg-white rounded-lg shadow m-6 px-8">
       {/* Header */}
@@ -257,20 +295,42 @@ export default function RealTaxSearch() {
             placeholder="Mã giao dịch"
           />
         </div>
-        {/* Nút tra cứu */}
-        <button
-          onClick={handleSearch}
-          disabled={loadingSearch}
-          className="ml-auto flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg shadow hover:bg-green-700 transition-colors text-base font-semibold min-w-[120px] h-12 justify-center"
-          style={{ marginTop: 22 }}
-        >
-          {loadingSearch ? <Spinner size={8} /> : (
-            <>
-              <FiSearch size={22} className="mr-2" />
-              <span>Tra cứu</span>
-            </>
-          )}
-        </button>
+        <div className="flex ml-auto gap-2">
+          {/* Nút tra cứu */}
+          <button
+            onClick={handleSearch}
+            disabled={loadingSearch}
+            className="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg shadow hover:bg-green-700 transition-colors text-base font-semibold min-w-[120px] h-12 justify-center"
+            style={{ marginTop: 22 }}
+          >
+            {loadingSearch ? <Spinner size={8} /> : (
+              <>
+                <FiSearch size={22} className="mr-2" />
+                <span>Tra cứu</span>
+              </>
+            )}
+          </button>
+          {/* Nút tải xuống */}
+          <button
+            onClick={handleDownload}
+            disabled={selectedRows.size === 0}
+            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors text-base font-semibold min-w-[120px] h-12 justify-center"
+            style={{ marginTop: 22 }}
+          >
+            <FiDownload size={22} className="mr-2" />
+            <span>Tải xuống</span>
+          </button>
+          {/* Nút xuất file excel */}
+          <button
+            onClick={handleExport}
+            disabled={filteredTableData.length <= 1}
+            className="flex items-center gap-2 bg-purple-600 text-white px-6 py-2 rounded-lg shadow hover:bg-purple-700 transition-colors text-base font-semibold min-w-[120px] h-12 justify-center"
+            style={{ marginTop: 22 }}
+          >
+            <FiFile size={22} className="mr-2" />
+            <span>Xuất</span>
+          </button>
+        </div>
       </div>
       
       {/* Navigation Bar */}
@@ -316,6 +376,14 @@ export default function RealTaxSearch() {
           <table className="w-full text-sm text-gray-700">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-4 py-3 border-b border-gray-400 text-left font-medium text-gray-800 w-12">
+                  <input
+                    type="checkbox"
+                    onChange={handleSelectAll}
+                    checked={selectedRows.size === filteredTableData.length - 1}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  />
+                </th>
                 {filteredTableData[0].map((header, idx) => (
                   <th
                     key={idx}
@@ -332,6 +400,14 @@ export default function RealTaxSearch() {
               {filteredTableData.slice(1).map((row, rowIndex) => {
                 return (
                   <tr key={rowIndex} className="border-b border-gray-400 hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedRows.has(rowIndex)}
+                        onChange={() => handleSelectRow(rowIndex)}
+                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                      />
+                    </td>
                     {row.map((cell, cellIndex) => {
                       const isTenToKhai = filteredTableData[0][cellIndex] === 'Tờ khai/Phụ lục' || 
                                         filteredTableData[0][cellIndex] === 'Tên tờ khai';

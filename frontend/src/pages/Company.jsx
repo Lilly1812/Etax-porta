@@ -25,17 +25,8 @@ export default function Company() {
     { id: "website", label: "Website"},
   ]);
   
-  // useEffect(() => {
-  //   // Gọi API lấy danh sách công ty
-  //   axios.get("http://localhost:8000/api/companies")
-  //     .then(res => setCompanies(res.data))
-  //     .catch(err => {
-  //       console.error("Lỗi khi lấy danh sách công ty:", err);
-  //       setCompanies([]);
-  //     });
-  // }, []);
   useEffect(() => {
-  axios.get("http://localhost:8000/api/companies")
+  axios.get('/api/companies')
     .then(res => {
       // Map lại tên trường cho đúng với frontend
       const mapped = res.data.map(item => ({
@@ -45,7 +36,6 @@ export default function Company() {
         address: item.ADDRESS || item.address,
         phone: item.PHONE || item.phone,
         website: item.WEBSITE || item.website,
-        periods: item.PERIODS || item.periods || [],
       }));
       setCompanies(mapped);
     })

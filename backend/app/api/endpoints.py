@@ -34,7 +34,7 @@ def get_companies():
     try:
         cur.execute("""
             SELECT 
-                TAX_CODE, COMPANY_NAME, ADDRESS, PHONE, WEBSITE, DECLARE_TYPE, ESTABLISHED_DATE, YEAR_START, YEAR_END
+                TAX_CODE, COMPANY_NAME, ADDRESS, PHONE, WEBSITE, ESTABLISHED_DATE
             FROM 
                 E_TAX.companies
         """)
@@ -47,10 +47,7 @@ def get_companies():
                 "ADDRESS": row[2],
                 "PHONE": row[3],
                 "WEBSITE": row[4],
-                "DECLARE_TYPE": row[5],
-                "ESTABLISHED_DATE": row[6],
-                "YEAR_START": row[7],
-                "YEAR_END": row[8],
+                "ESTABLISHED_DATE": row[5],
             })
         return companies
     finally:
@@ -99,4 +96,3 @@ def download(ma_giao_dich: str):
 @router.get("/displaylisttax")
 def displaylisttax(fromdate: str = None, todate: str = None):
     return tax_service.displaylisttax(driver, wait, fromdate, todate)
-

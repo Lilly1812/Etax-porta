@@ -8,9 +8,9 @@ const TaxSearchFilters = ({
   statusCounts 
 }) => {
   return (
-    <div className="flex gap-2 my-4">
+    <div className="flex gap-2">
       {/* Status Filter */}
-      <div className="flex gap-2 overflow-x-auto p-2 bg-white rounded-lg shadow-sm">
+      <div className="flex gap-2">
         <button
           onClick={() => setSelectedStatus("all")}
           className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex items-center
@@ -62,7 +62,7 @@ const TaxSearchFilters = ({
       </div>
 
       {/* Tax Type Filter */}
-      <div className="flex gap-2 overflow-x-auto p-2 bg-white rounded-lg shadow-sm">
+      <div className="flex gap-2">
         <button
           onClick={() => setSelectedTaxType("all")}
           className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex items-center

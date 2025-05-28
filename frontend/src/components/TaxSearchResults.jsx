@@ -2,24 +2,28 @@ import React from 'react';
 import { validateTaxCode } from '../utils/taxCodeUtils';
 
 const TaxSearchResults = ({ searchResults, getFilteredResults }) => {
-  if (!searchResults.length) return null;
+  if (!searchResults.length) {
+    return (
+      <div className="bg-white border border-gray-400 rounded-lg p-8 text-center">
+        <div className="text-gray-400">Không có dữ liệu</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-auto shadow-sm mb-6 h-[500px]">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-6">
       <div className="p-4 bg-gray-50 border-b border-gray-200">
-        <div className="flex flex-col gap-4">
-          <h3 className="text-lg font-semibold text-gray-800">Danh sách nghĩa vụ kê khai thuế</h3>
-        </div>
+        <h3 className="text-lg font-semibold text-gray-800">Danh sách nghĩa vụ kê khai thuế</h3>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-gray-700">
-          <thead className="bg-gray-50">
+      <div className="overflow-x-auto max-h-[500px]">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 sticky top-0">
             <tr>
               {searchResults[0].map((header, idx) => (
                 <th
                   key={idx}
-                  className={`px-6 py-4 text-left font-medium text-gray-800 border-b border-gray-200 ${
+                  className={`px-6 py-3 text-left font-medium text-gray-700 border-b border-gray-200 ${
                     idx === 0 ? 'w-16' : // STT
                     idx === 1 ? 'w-48' : // Tên tờ khai
                     idx === 2 ? 'w-32' : // Mã
@@ -33,28 +37,29 @@ const TaxSearchResults = ({ searchResults, getFilteredResults }) => {
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-100">
             {getFilteredResults().map((row, rowIdx) => (
               <tr
                 key={rowIdx}
-                className="border-b border-gray-100 hover:bg-gray-50"
+                className="hover:bg-gray-50/50 transition-colors duration-150"
               >
                 {row.map((cell, cellIdx) => {
-                  // Validate the "Mã" column (index 2) using tokhaiArray rules
                   let displayValue = cell;
-                  if (cellIdx === 2) { // Mã column
+                  if (cellIdx === 2) {
                     displayValue = validateTaxCode(cell);
                   }
                   
                   return (
                     <td 
                       key={cellIdx} 
-                      className={`px-6 py-4 ${
+                      className={`px-6 py-3.5 ${
                         cellIdx === 1 ? 'whitespace-normal' : 'whitespace-nowrap'
                       } ${
                         cellIdx === 5 ? // Trạng thái column
-                          cell === 'Hoàn thành' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'
-                          : ''
+                          cell === 'Hoàn thành' 
+                            ? 'text-emerald-600 font-medium' 
+                            : 'text-rose-600 font-medium'
+                          : 'text-gray-600'
                       }`}
                     >
                       <div className={`${

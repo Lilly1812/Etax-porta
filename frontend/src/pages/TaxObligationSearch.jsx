@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FiFileText } from "react-icons/fi";
 import { useCompany } from "../context/CompanyContext";
 import { findTaxCodeByName, validateTaxCode } from "../utils/taxCodeUtils";
 import { getTaxDeclarationList, searchSubmittedTaxDeclarations } from "../services/taxService";
@@ -94,14 +95,28 @@ export default function TaxObligationSearch() {
         
         // Extract tax codes and periods from submitted tax results (lower table)
         const submittedTaxInfo = new Map();
-        if (submittedTaxData.length > 1) {
+        if (submittedTaxData && submittedTaxData.length > 1) {
+          // Get header row first
+          const headerRow = submittedTaxData[0];
+          if (!headerRow) {
+            console.warn("No header row found in submitted tax data");
+            return;
+          }
+
+          // Find the processing status column index
+          const processingStatusIndex = headerRow.findIndex(h => 
+            h === 'Tiến trình giải quyết hồ sơ (Trạng thái)'
+          );
+
+          if (processingStatusIndex === -1) {
+            console.warn("Processing status column not found in submitted tax data");
+            return;
+          }
+
           // Skip header row (index 0)
           submittedTaxData.slice(1).forEach(row => {
             const tenToKhai = row[2] || ""; // Tờ khai/Phụ lục column
             const kyKeKhai = row[3] || ""; // Kỳ kê khai column
-            const processingStatusIndex = submittedTaxResults[0].findIndex(h => 
-              h === 'Tiến trình giải quyết hồ sơ (Trạng thái)'
-            );
             const processingStatus = row[processingStatusIndex] || "";
             const status = getStatus(processingStatus);
             
@@ -174,14 +189,13 @@ export default function TaxObligationSearch() {
   };
 
   return (
-    <div className="p-8 w-full flex flex-col overflow-y-auto">
+    <div className="p-6 bg-white rounded-lg shadow m-6 px-8 flex flex-col gap-6">
       {/* Header */}
       <div className="">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">
-            TRA CỨU NGHĨA VỤ KÊ KHAI THUẾ
-          </h1>
-        </div>
+      <div className="flex items-center mb-4">
+        <FiFileText size={26} className="text-green-700 mr-2" />
+        <span className="text-lg font-semibold tracking-wide">TRA CỨU NGHĨA VỤ KÊ KHAI THUẾ</span>
+      </div>
 
 
         {/* Search Form */}

@@ -1,7 +1,14 @@
 import React from 'react';
-import { FiSearch } from 'react-icons/fi';
+import { FiSearch, FiFile } from 'react-icons/fi';
 import Spinner from './Spinner';
-
+const handleExport = async () => {
+  if (filteredTableData.length <= 1) {
+    toast.warning('Không có dữ liệu để xuất');
+    return;
+  }
+  // Implement export logic here
+  toast.info('Đang xuất dữ liệu ra file Excel...');
+};
 const TaxSearchForm = ({ 
   fromDate, 
   setFromDate, 
@@ -11,42 +18,40 @@ const TaxSearchForm = ({
   handleSearch 
 }) => {
   return (
-    <div className="mt-4 bg-white p-6 rounded-xl shadow-sm">
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
-          <label htmlFor="fromDate" className="block text-sm font-medium text-gray-700 mb-1">
-            Từ ngày
+    <div className="">
+      <div className="flex flex-wrap items-end gap-4">
+        <div className="flex flex-col">
+          <label htmlFor="fromDate" className="text-xs text-gray-500 mb-1">
+          Thời gian
           </label>
           <input
             type="date"
             id="fromDate"
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="p-2 border border-gray-300 rounded min-w-[140px]"
+            placeholder="Từ ngày"
           />
         </div>
-        <div className="flex-1">
-          <label htmlFor="toDate" className="block text-sm font-medium text-gray-700 mb-1">
-            Đến ngày
+        <span className="text-gray-400 mb-2">-</span>
+        <div className="flex flex-col">
+          <label htmlFor="toDate" className="text-xs text-gray-500 mb-1">
+          &nbsp;
           </label>
           <input
             type="date"
             id="toDate"
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="p-2 border border-gray-300 rounded min-w-[140px]"
+            placeholder="Đến ngày"
           />
         </div>
-        <div className="flex items-end">
+        <div className="flex items-end gap-4 ml-auto">
           <button
             onClick={handleSearch}
             disabled={loadingSearch}
-            className="bg-[#4680ef] text-white px-6 py-2.5 rounded-xl font-medium 
-                   hover:bg-blue-600 active:bg-blue-700 
-                   transition-all duration-300 ease-in-out
-                   transform hover:-translate-y-0.5 active:translate-y-0
-                   disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0
-                   flex items-center gap-2 shadow-lg shadow-blue-100"
+            className="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg shadow hover:bg-green-700 transition-colors text-base font-semibold min-w-[120px] h-12 justify-center"
           >
             {loadingSearch ? (
               <Spinner size={5} />
@@ -56,6 +61,13 @@ const TaxSearchForm = ({
                 <span>Tra cứu</span>
               </>
             )}
+          </button>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 bg-purple-600 text-white px-6 py-2 rounded-lg shadow hover:bg-purple-700 transition-colors text-base font-semibold min-w-[120px] h-12 justify-center"
+          >
+            <FiFile size={22} className="mr-2" />
+            <span>Xuất</span>
           </button>
         </div>
       </div>
