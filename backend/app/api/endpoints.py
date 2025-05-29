@@ -28,6 +28,46 @@ async def app_login(request: Request):
         cur.close()
         conn.close()
 
+@router.post("/api/register")
+def register_user(user: dict = Body(...)):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        # print("User data:", user) # In ra dữ liệu nhận được
+        # Kiểm tra username hoặc email đã tồn tại chưa
+        cur.execute(
+            "SELECT COUNT(*) FROM E_TAX.users WHERE username=:1 OR email=:2",
+            (user["username"], user["email"])
+        )
+        exists = cur.fetchone()[0]
+        if exists:
+            raise HTTPException(status_code=400, detail="Tên đăng nhập hoặc email đã tồn tại.")
+
+        # Thêm user mới
+        cur.execute(
+            """
+            INSERT INTO E_TAX.users (full_name ,username, email, phone, password, role, status)
+            VALUES (:1, :2, :3, :4, :5, :6, :7)
+            """,
+            (
+                user["full_name"],
+                user["username"],
+                user["email"],
+                user["phone"],
+                user["password"],  # mã hóa mật khẩu ở thực tế!
+                user.get("role", "TAXPAYER"),
+                user.get("status", "ACTIVE"),
+            )
+        )
+        conn.commit()
+        return {"success": True}
+    except Exception as e:
+        print("Register error:", e)  # In lỗi chi tiết ra console
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+        
 @router.get("/api/companies")
 def get_companies():
     conn = get_connection()

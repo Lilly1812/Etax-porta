@@ -26,7 +26,9 @@ export default function CompanyFormEdit({ isOpen, onClose, onSubmit, company }) 
     if (company) {
       setForm({
         taxId: company.taxId || "",
-        companystartdate: company.companystartdate || "",
+        companystartdate: company.companystartdate
+          ? company.companystartdate.slice(0, 10)
+          : "",
         name: company.name || "",
         address: company.address || "",
         email: company.email || "",

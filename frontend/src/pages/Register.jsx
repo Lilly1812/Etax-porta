@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.png";
 import bgImage from "../assets/bg2.jpg";
+import axios from "axios"; 
 
 function RegisterForm() {
   const [form, setForm] = useState({
-    fullName: "",
+    full_name: "",
     username: "",
     email: "",
     phone: "",
@@ -15,47 +16,42 @@ function RegisterForm() {
   const [error, setError] = useState("");
   const { setStep } = useAuth();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setError("");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
 
-    // Basic validation
-    if (!form.fullName || !form.username || !form.email || !form.password || !form.confirmPassword) {
-      setError("Vui lòng nhập đầy đủ thông tin.");
-      return;
-    }
+  // Basic validation
+  if (!form.phone || !form.username || !form.full_name || !form.email || !form.password || !form.confirmPassword) {
+    setError("Vui lòng nhập đầy đủ thông tin.");
+    return;
+  }
 
-    if (form.password !== form.confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp.");
-      return;
-    }
+  if (form.password !== form.confirmPassword) {
+    setError("Mật khẩu xác nhận không khớp.");
+    return;
+  }
 
-    // Save to localStorage
-    const existingUsers = JSON.parse(localStorage.getItem("users") || "[]");
-    const userExists = existingUsers.some((u) => u.username === form.username);
-    const emailExists = existingUsers.some((u) => u.email === form.email);
-
-    if (userExists) {
-      setError("Tên đăng nhập đã tồn tại.");
-      return;
-    }
-    if (emailExists) {
-      setError("Email đã tồn tại.");
-      return;
-    }
-
-    existingUsers.push({
-      fullName: form.fullName,
+  try {
+    // Gửi dữ liệu lên backend
+    await axios.post("/api/register", {
+      full_name: form.full_name,
       username: form.username,
       email: form.email,
       phone: form.phone,
-      password: form.password
+      password: form.password,
     });
-    localStorage.setItem("users", JSON.stringify(existingUsers));
 
     alert("Đăng ký thành công! Hãy đăng nhập.");
     setStep("start");
-  };
+  } catch (err) {
+    console.error(err); 
+    setError(
+      err.response?.data?.detail ||
+      err.response?.data?.message ||
+      "Đăng ký thất bại. Vui lòng thử lại."
+    );
+  }
+};
 
   return (
     <div className="w-full h-screen ">
@@ -71,22 +67,22 @@ function RegisterForm() {
                 {error}
               </div>
             )}
-            <div className="flex justify-between gap-4">
-            <div className="space-y-2 w-1/2">
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                Họ và tên
+
+            <div className="space-y-2">
+              <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
+                Họ và Tên
               </label>
               <input
-                id="fullName"
+                id="full_name"
                 type="text"
-                value={form.fullName}
-                onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                value={form.full_name}
+                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Nhập họ và tên của bạn"
+                placeholder="Nhập họ tên"
               />
             </div>
 
-            <div className="space-y-2 w-1/2">
+            <div className="space-y-2">
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Tên đăng nhập
               </label>
@@ -99,8 +95,6 @@ function RegisterForm() {
                 placeholder="Nhập tên đăng nhập"
               />
             </div>
-            </div>
-            
 
             <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
