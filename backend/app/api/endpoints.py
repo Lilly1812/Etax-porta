@@ -4,6 +4,7 @@ from app.services import tax_service
 from app.utils.url_manager import URLStateManager
 from app.db.oracle import get_connection
 from fastapi import Body
+from passlib.hash import bcrypt
 
 router = APIRouter()
 
@@ -18,9 +19,10 @@ async def app_login(request: Request):
     conn = get_connection()
     cur = conn.cursor()
     try:
-        cur.execute("SELECT * FROM E_TAX.users WHERE username=:1 AND password=:2", (username, password))
-        user = cur.fetchone()
-        if user:
+        # Lấy hash mật khẩu từ DB
+        cur.execute("SELECT password FROM E_TAX.users WHERE username=:1", (username,))
+        row = cur.fetchone()
+        if row and bcrypt.verify(password, row[0]):
             return {"success": True, "user": username}
         else:
             raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không đúng.")
@@ -43,6 +45,9 @@ def register_user(user: dict = Body(...)):
         if exists:
             raise HTTPException(status_code=400, detail="Tên đăng nhập hoặc email đã tồn tại.")
 
+        # Mã hóa mật khẩu trước khi lưu
+        hashed_password = bcrypt.hash(user["password"])
+
         # Thêm user mới
         cur.execute(
             """
@@ -54,7 +59,7 @@ def register_user(user: dict = Body(...)):
                 user["username"],
                 user["email"],
                 user["phone"],
-                user["password"],  # mã hóa mật khẩu ở thực tế!
+                hashed_password,  # mã hóa mật khẩu ở thực tế!
                 user.get("role", "TAXPAYER"),
                 user.get("status", "ACTIVE"),
             )
