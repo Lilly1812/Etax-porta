@@ -59,7 +59,7 @@ def register_user(user: dict = Body(...)):
                 user["username"],
                 user["email"],
                 user["phone"],
-                hashed_password,  # mã hóa mật khẩu ở thực tế!
+                hashed_password,
                 user.get("role", "TAXPAYER"),
                 user.get("status", "ACTIVE"),
             )
@@ -67,12 +67,12 @@ def register_user(user: dict = Body(...)):
         conn.commit()
         return {"success": True}
     except Exception as e:
-        print("Register error:", e)  # In lỗi chi tiết ra console
+        # print("Register error:", e)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cur.close()
         conn.close()
-        
+
 @router.get("/api/companies")
 def get_companies():
     conn = get_connection()
@@ -80,20 +80,40 @@ def get_companies():
     try:
         cur.execute("""
             SELECT 
-                TAX_CODE, COMPANY_NAME, ADDRESS, PHONE, WEBSITE, ESTABLISHED_DATE
+                TAX_CODE, COMPANY_NAME, ADDRESS, PHONE, WEBSITE, ESTABLISHED_DATE, COMPANY_ID
             FROM 
                 E_TAX.companies
         """)
         rows = cur.fetchall()
         companies = []
         for row in rows:
+            company_id = row[6]
+            # Lấy các kỳ kê khai cho công ty này
+            cur.execute("""
+                SELECT START_DATE, END_DATE, PERIOD_TYPE
+                FROM E_TAX.TAX_FILING_PERIODS
+                WHERE COMPANY_ID = :1
+            """, (company_id,))
+            periods = [
+                {
+                    "startYear": str(period[0])[:4] if period[0] else "",
+                    "endYear": str(period[1])[:4] if period[1] else "",
+                    "type": (
+                        "theo_nam" if period[2] == "YEAR"
+                        else "theo_quy" if period[2] == "QUARTER"
+                        else "theo_thang"
+                    )
+                }
+                for period in cur.fetchall()
+            ]
             companies.append({
                 "taxId": row[0],
                 "name": row[1],
                 "address": row[2],
                 "phone": row[3],
                 "website": row[4],
-                "companystartdate": row[5]
+                "companystartdate": row[5],
+                "periods": periods
             })
         return companies
     finally:
@@ -116,8 +136,32 @@ def add_company(company: dict = Body(...)):
             company["phone"],
             company["website"]
         ))
+        # Lấy COMPANY_ID vừa thêm
+        cur.execute("SELECT COMPANY_ID FROM E_TAX.companies WHERE TAX_CODE=:1", (company["taxId"],))
+        company_id = cur.fetchone()[0]
+        # Thêm các kỳ kê khai nếu có
+        for period in company.get("periods", []):
+            start_year = str(period.get("startYear", ""))
+            end_year = str(period.get("endYear", ""))
+            period_type = period.get("type", "")
+            if not (start_year and end_year and period_type):
+                print("Thiếu dữ liệu kỳ kê khai:", period)
+                continue
+            cur.execute("""
+                INSERT INTO E_TAX.TAX_FILING_PERIODS 
+                (PERIOD_ID, COMPANY_ID, START_DATE, END_DATE, PERIOD_TYPE)
+                VALUES (E_TAX.TAX_FILING_PERIODS_SEQ.NEXTVAL, :1, TO_DATE(:2, 'YYYY'), TO_DATE(:3, 'YYYY'), :4)
+            """, (
+                company_id,
+                start_year,
+                end_year,
+                "YEAR" if period_type == "theo_nam" else "QUARTER" if period_type == "theo_quy" else "MONTH"
+            ))
         conn.commit()
         return {"success": True}
+    except Exception as e:
+        print("Add company error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         cur.close()
         conn.close()
@@ -127,9 +171,10 @@ def update_company(tax_id: str, company: dict = Body(...)):
     conn = get_connection()
     cur = conn.cursor()
     try:
+        # Cập nhật thông tin công ty
         cur.execute("""
             UPDATE E_TAX.companies
-            SET COMPANY_NAME=:1, ESTABLISHED_DATE=:2, ADDRESS=:3, PHONE=:4, WEBSITE=:5
+            SET COMPANY_NAME=:1, ESTABLISHED_DATE=TO_DATE(:2, 'YYYY-MM-DD'), ADDRESS=:3, PHONE=:4, WEBSITE=:5
             WHERE TAX_CODE=:6
         """, (
             company["name"],
@@ -139,8 +184,50 @@ def update_company(tax_id: str, company: dict = Body(...)):
             company["website"],
             tax_id
         ))
+
+        # Lấy COMPANY_ID theo TAX_CODE
+        cur.execute("SELECT COMPANY_ID FROM E_TAX.companies WHERE TAX_CODE=:1", (tax_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy công ty")
+        company_id = row[0]
+
+        # Xóa các kỳ kê khai cũ
+        cur.execute("DELETE FROM E_TAX.TAX_FILING_PERIODS WHERE COMPANY_ID=:1", (company_id,))
+        # Thêm lại các kỳ kê khai mới
+        inserted_periods = set()
+        # Thêm lại các kỳ kê khai mới
+        for period in company.get("periods", []):
+            start_year = str(period.get("startYear", ""))
+            end_year = str(period.get("endYear", ""))
+            period_type = period.get("type", "")
+            if not (start_year and end_year and period_type):
+                continue
+            if int(start_year) > int(end_year):
+                print(f"startYear {start_year} > endYear {end_year}, bỏ qua")
+                continue
+            db_period_type = "YEAR" if period_type == "theo_nam" else "QUARTER" if period_type == "theo_quy" else "MONTH"
+            key = (start_year, end_year, db_period_type)
+            if key in inserted_periods:
+                print(f"Trùng kỳ kê khai: {key}, bỏ qua")
+                continue
+            inserted_periods.add(key)
+            cur.execute("""
+                INSERT INTO E_TAX.TAX_FILING_PERIODS 
+                (PERIOD_ID, COMPANY_ID, START_DATE, END_DATE, PERIOD_TYPE)
+                VALUES (E_TAX.TAX_FILING_PERIODS_SEQ.NEXTVAL, :1, TO_DATE(:2, 'YYYY'), TO_DATE(:3, 'YYYY'), :4)
+            """, (
+                company_id,
+                start_year,
+                end_year,
+                "YEAR" if period_type == "theo_nam" else "QUARTER" if period_type == "theo_quy" else "MONTH"
+            ))
+
         conn.commit()
         return {"success": True}
+    except Exception as e:
+        print("Update company error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         cur.close()
         conn.close()
@@ -150,6 +237,15 @@ def delete_company(tax_id: str):
     conn = get_connection()
     cur = conn.cursor()
     try:
+        # Lấy COMPANY_ID theo TAX_CODE
+        cur.execute("SELECT COMPANY_ID FROM E_TAX.companies WHERE TAX_CODE=:1", (tax_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Không tìm thấy công ty")
+        company_id = row[0]
+        # Xoá các kỳ kê khai trước
+        cur.execute("DELETE FROM E_TAX.TAX_FILING_PERIODS WHERE COMPANY_ID=:1", (company_id,))
+        # Xoá công ty
         cur.execute("DELETE FROM E_TAX.companies WHERE TAX_CODE=:1", (tax_id,))
         conn.commit()
         return {"success": True}
